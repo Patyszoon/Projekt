@@ -1,8 +1,8 @@
 import java.sql.*;
 
-public void insertUser(Connection conn) throws SQLException {
+public void insertUser(Connection conn, Scanner sc) throws SQLException {
     Statement stmt = conn.createStatement();
-    Scanner sc = new Scanner(System.in);
+//    Scanner sc = new Scanner(System.in);
 
     System.out.print("Podaj imie: ");
     String imie = sc.nextLine();
@@ -23,8 +23,8 @@ public void insertUser(Connection conn) throws SQLException {
     pstmt.executeUpdate();
 //    pstmt.close();
 }
-public void updateUser(Connection conn) throws SQLException {
-    Scanner sc = new Scanner(System.in);
+public void updateUser(Connection conn, Scanner sc) throws SQLException {
+//    Scanner sc = new Scanner(System.in);
     System.out.print("Podaj id uzytkownika do edycji: ");
     int id = Integer.parseInt(sc.nextLine());
 
@@ -46,8 +46,8 @@ public void updateUser(Connection conn) throws SQLException {
     pstmt.executeUpdate();
 
 }
-public void deleteUser(Connection conn) throws SQLException {
-    Scanner sc = new Scanner(System.in);
+public void deleteUser(Connection conn, Scanner sc) throws SQLException {
+//    Scanner sc = new Scanner(System.in);
     System.out.print("Podaj id uzytkownika do usuniecia: ");
     int id = Integer.parseInt(sc.nextLine());
     PreparedStatement pstmt = conn.prepareStatement("DELETE FROM uzytkownik WHERE id = ?");
@@ -68,6 +68,7 @@ public void showUsers(Connection conn) throws SQLException {
 }
 
 public void main() throws SQLException, IOException {
+    Scanner sc = new Scanner(System.in);
 //    Connection conn = DriverManager.getConnection("jdbc:mysql://localhost:55555/samochody", "root", "");
     File configFile = new File("config.properties");
         if (!configFile.exists()) {
@@ -92,7 +93,29 @@ public void main() throws SQLException, IOException {
     String url = "jdbc:mysql://" + host + ":" + port + "/" + dbName;
     // nawiazanie polaczenia
     Connection conn = DriverManager.getConnection(url, user, password);
-//
+
+    // MENU
+    boolean running  = true;
+    while(running){
+        System.out.println("-----MENU-----\n" +
+                "Co chcesz zrobic?\n" +
+                "1. Dodaj uzytkownika\n" +
+                "2. Edytuj uzytkownika\n" +
+                "3. Usun uzytkownika\n" +
+                "4. Wyswietl uzytkownikow\n" +
+                "0. Wyjscie\n");
+
+        int wybor = Integer.parseInt(sc.nextLine());
+
+        switch(wybor){
+            case 1: insertUser(conn, sc); break;
+            case 2: updateUser(conn, sc);  break;
+            case 3: deleteUser(conn, sc);  break;
+            case 4: showUsers(conn);  break;
+            case 0: running = false; break;
+            default: System.out.println("brak takiego dzialania"); break;
+        }
+    }
 //    Statement stmt = conn.createStatement();
 ////   String sql = "CREATE TABLE uzytkownik ("
 ////            + "id INT PRIMARY KEY AUTO_INCREMENT, "
@@ -134,5 +157,5 @@ public void main() throws SQLException, IOException {
 //    del.setInt(1, 1);
 //    del.executeUpdate();
 
-//    MENU
+
 }
