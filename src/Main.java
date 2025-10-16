@@ -1,39 +1,39 @@
 import java.sql.*;
 
 public void main() throws SQLException, IOException {
-    Connection conn = DriverManager.getConnection("jdbc:mysql://localhost:55555/samochody", "root", "");
-//    File configFile = new File("config.properties");
-//        if (!configFile.exists()) {
-//            Properties defaultProps = new Properties();
-//            defaultProps.setProperty("db.host", "localhost");
-//            defaultProps.setProperty("db.port","55555");
-//            defaultProps.setProperty("db.name","samochody");
-//            defaultProps.setProperty("db.user","root");
-//            defaultProps.setProperty("db.password", "");
-//            defaultProps.store(new FileOutputStream(configFile), "Domyslne ustawienia bazy danych");
-//        }
-//
-//    Properties props = new Properties();
-//    props.load(new FileInputStream("config.properties"));
-//    String host = props.getProperty("db.host");
-//    String port = props.getProperty("db.port");
-//    String dbName = props.getProperty("db.name");
-//    String user = props.getProperty("db.user");
-//    String password = props.getProperty("db.password");
-//
-//    // budowa connection string dynamicznie
-//    String url = "jdbc:mysql://" + host + ":" + port + "/" + dbName;
-//    // nawiazanie polaczenia
-//    Connection conn = DriverManager.getConnection(url, user, password);
+//    Connection conn = DriverManager.getConnection("jdbc:mysql://localhost:55555/samochody", "root", "");
+    File configFile = new File("config.properties");
+        if (!configFile.exists()) {
+            Properties defaultProps = new Properties();
+            defaultProps.setProperty("db.host", "localhost");
+            defaultProps.setProperty("db.port","55555");
+            defaultProps.setProperty("db.name","samochody");
+            defaultProps.setProperty("db.user","root");
+            defaultProps.setProperty("db.password", "");
+            defaultProps.store(new FileOutputStream(configFile), "Domyslne ustawienia bazy danych");
+        }
+
+    Properties props = new Properties();
+    props.load(new FileInputStream("config.properties"));
+    String host = props.getProperty("db.host");
+    String port = props.getProperty("db.port");
+    String dbName = props.getProperty("db.name");
+    String user = props.getProperty("db.user");
+    String password = props.getProperty("db.password");
+
+    // budowa connection string dynamicznie
+    String url = "jdbc:mysql://" + host + ":" + port + "/" + dbName;
+    // nawiazanie polaczenia
+    Connection conn = DriverManager.getConnection(url, user, password);
 
     Statement stmt = conn.createStatement();
-   String sql = "CREATE TABLE uzytkownik ("
-            + "id INT PRIMARY KEY AUTO_INCREMENT, "
-            + "imie VARCHAR(20) NOT NULL, "
-            + "nazwisko VARCHAR(30) NOT NULL, "
-            + "nr_tel INT(9) NOT NULL, "
-            + "data_ur DATE NOT NULL)";
-    stmt.executeUpdate(sql);
+//   String sql = "CREATE TABLE uzytkownik ("
+//            + "id INT PRIMARY KEY AUTO_INCREMENT, "
+//            + "imie VARCHAR(20) NOT NULL, "
+//            + "nazwisko VARCHAR(30) NOT NULL, "
+//            + "nr_tel INT(9) NOT NULL, "
+//            + "data_ur DATE NOT NULL)";
+//    stmt.executeUpdate(sql);
 
     stmt.executeUpdate(
             "INSERT INTO uzytkownik (imie, nazwisko, nr_tel, data_ur) VALUES " +
