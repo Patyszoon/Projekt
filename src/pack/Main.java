@@ -1,14 +1,17 @@
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
+package pack;
+
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.sql.*;
 import java.sql.Date;
-import java.util.Properties;
 import java.util.Scanner;
 
+
 public class Main {
+    private static Connection conn;
+
+
+
     public static void insertUser(Connection conn, Scanner sc) throws SQLException {
         Statement stmt = conn.createStatement();
 //    Scanner sc = new Scanner(System.in);
@@ -78,33 +81,8 @@ public class Main {
 
     public static void main(String[] arg) throws SQLException, IOException {
         Scanner sc = new Scanner(System.in);
-//    Connection conn = DriverManager.getConnection("jdbc:mysql://localhost:55555/samochody", "root", "");
-        File configFile = new File("config.properties");
-        if (!configFile.exists()) {
-            Properties defaultProps = new Properties();
-            defaultProps.setProperty("db.host", "localhost");
-            defaultProps.setProperty("db.port", "55555");
-            defaultProps.setProperty("db.name", "samochody");
-            defaultProps.setProperty("db.user", "root");
-            defaultProps.setProperty("db.password", "");
-            defaultProps.store(new FileOutputStream(configFile), "Domyslne ustawienia bazy danych");
-        }
-
-        Properties props = new Properties();
-        props.load(new FileInputStream("config.properties"));
-        String host = props.getProperty("db.host");
-        String port = props.getProperty("db.port");
-        String dbName = props.getProperty("db.name");
-        String user = props.getProperty("db.user");
-        String password = props.getProperty("db.password");
-
-        // budowa connection string dynamicznie
-        String url = "jdbc:mysql://" + host + ":" + port + "/" + dbName;
-        // nawiazanie polaczenia
-        Connection conn = DriverManager.getConnection(url, user, password);
 
         Statement stmt = conn.createStatement();
-
         // MENU
         boolean running = true;
         while (running) {
