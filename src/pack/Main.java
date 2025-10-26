@@ -8,9 +8,6 @@ import java.util.Scanner;
 
 
 public class Main {
-    private static Connection conn;
-
-
 
     public static void insertUser(Connection conn, Scanner sc) throws SQLException {
         Statement stmt = conn.createStatement();
@@ -81,6 +78,8 @@ public class Main {
 
     public static void main(String[] arg) throws SQLException, IOException {
         Scanner sc = new Scanner(System.in);
+        DbConnect dbConnect = new DbConnect();
+        Connection conn = dbConnect.getConnection();
 
         Statement stmt = conn.createStatement();
         // MENU

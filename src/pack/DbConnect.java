@@ -11,10 +11,13 @@ import java.sql.Statement;
 import java.util.Properties;
 
 public class DbConnect {
-
-    public static Connection conn;
+    private Connection conn;
 
     public DbConnect() throws SQLException, IOException {
+
+    }
+
+    public Connection getConnection() throws SQLException, IOException {
         File configFile = new File("config.properties");
         if (!configFile.exists()) {
             Properties defaultProps = new Properties();
@@ -38,10 +41,15 @@ public class DbConnect {
         String url = "jdbc:mysql://" + host + ":" + port + "/" + dbName;
 
         // nawiazanie polaczenia
-        Connection conn = DriverManager.getConnection(url, user, password);
+        conn = DriverManager.getConnection(url, user, password);
+
+        return conn;
     }
 
-    public static void main(String[] arg) {
-
+    // metoda do zamkniecia polaczenia
+    public void closeConnection() throws SQLException {
+        if(conn != null && !conn.isClosed()) {
+            conn.close();
+        }
     }
 }
