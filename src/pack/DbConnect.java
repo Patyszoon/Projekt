@@ -13,9 +13,9 @@ import java.util.Properties;
 public class DbConnect {
     private Connection conn;
 
-    public DbConnect() throws SQLException, IOException {
-
-    }
+//    public DbConnect() throws SQLException, IOException {
+//
+//    }
 
     public Connection getConnection() throws SQLException, IOException {
         File configFile = new File("config.properties");
