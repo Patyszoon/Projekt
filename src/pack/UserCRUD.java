@@ -30,7 +30,8 @@ public class UserCRUD {
         pstmt.setString(1, imie);
         pstmt.setString(2, nazwisko);
         pstmt.setString(3, nr_tel);
-        pstmt.setString(4, data_ur);
+        //pstmt.setString(4, data_ur);
+        pstmt.setDate(4, java.sql.Date.valueOf(data_ur));
         pstmt.executeUpdate();
 //    pstmt.close();
     }
@@ -49,7 +50,7 @@ public class UserCRUD {
         if(pole.equals("data_ur")){
             pstmt.setDate(1, Date.valueOf(wartosc)); // java.sql.Date to klasa reprezentujaca date w jdbc, valueOf konwersja
         }else if(pole.equals("nr_tel")){
-            pstmt.setInt(2,Integer.parseInt(wartosc));
+            pstmt.setInt(1,Integer.parseInt(wartosc));
         }else{
             pstmt.setString(1, wartosc);
         }

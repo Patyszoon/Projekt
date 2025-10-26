@@ -20,14 +20,14 @@ public class Main {
             menu.showMenu();
             menu.close();
         } catch (SQLException e) {
-            System.out.println("BLAD SQL" + e.getMessage());
+            System.out.println("BLAD BAZY DANYCH" + e.getMessage());
         } catch (IOException e) {
-            System.out.println("BLAD IO" + e.getMessage());
+            System.out.println("BLAD I/O" + e.getMessage());
         } finally {
             try {
                 dbConnect.closeConnection();
             } catch (SQLException e) {
-                System.out.println("BLAD SQL" + e.getMessage());
+                System.out.println("BLAD BAZY DANYCH" + e.getMessage());
             }
         }
 
