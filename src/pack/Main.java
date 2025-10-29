@@ -13,7 +13,6 @@ public class Main {
             Connection conn = dbConnect.getConnection();
             UserCRUD userCRUD = new UserCRUD(conn);
             Menu menu = new Menu(sc, userCRUD);
-            // Statement stmt = conn.createStatement();
 
             menu.showMenu();
             menu.close();

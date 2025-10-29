@@ -28,13 +28,30 @@ public class Menu {
 
             switch (wybor) {
                 case 1:
-                    userCRUD.insertUser(sc);
+                    System.out.print("Podaj imie: ");
+                    String imie = sc.nextLine();
+                    System.out.print("Podaj nazwisko: ");
+                    String nazwisko = sc.nextLine();
+                    System.out.print("Podaj nr telefonu: ");
+                    String nr_tel = sc.nextLine();
+                    System.out.print("Podaj date urodzenia (rrrr-mm-dd):  ");
+                    String data_ur = sc.nextLine();
+                    userCRUD.insertUser(imie, nazwisko, nr_tel, data_ur);
                     break;
                 case 2:
-                    userCRUD.updateUser(sc);
+                    System.out.print("Podaj id uzytkownika do edycji: ");
+                    int id = Integer.parseInt(sc.nextLine());
+                    System.out.print("Podaj pole do zmiany (imie/nazwisko/nr_tel/data_ur): ");
+                    String pole = sc.nextLine();
+                    System.out.print("Podaj nowa wartosc: ");
+                    String wartosc = sc.nextLine();
+                    userCRUD.updateUser(id, pole, wartosc);
                     break;
                 case 3:
-                    userCRUD.deleteUser(sc);
+
+                    System.out.print("Podaj id uzytkownika do usuniecia: ");
+                    int idDel = Integer.parseInt(sc.nextLine());
+                    userCRUD.deleteUser(idDel);
                     break;
                 case 4:
                     userCRUD.showUsers();
