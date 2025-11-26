@@ -1,6 +1,8 @@
 package pack;
 
 import java.sql.*;
+import java.util.ArrayList;
+import java.util.List;
 
 public class UserCRUD {
     private Connection conn;
@@ -19,7 +21,6 @@ public class UserCRUD {
         pstmt.setString(2, nazwisko);
         pstmt.setString(3, nr_tel);
         pstmt.setString(4, data_ur);
-        pstmt.setDate(4, java.sql.Date.valueOf(data_ur));
         pstmt.executeUpdate();
 
         pstmt.close();
@@ -47,6 +48,7 @@ public class UserCRUD {
         pstmt.setInt(1, id);
         pstmt.executeUpdate();
     }
+    // do konsoli
     public void showUsers() throws SQLException {
         Statement stmt = conn.createStatement();
         ResultSet rs = stmt.executeQuery("SELECT * FROM uzytkownik");
@@ -62,6 +64,26 @@ public class UserCRUD {
             System.out.printf("| %-5s |  %-10s |  %-20s |  %-10s | %-10s | \n", id, imie, nazwisko, nr_tel, data_ur);
         }
         System.out.println("--------------------------------------------------------------------------");
+    }
+
+    // do gui
+    public List<Object[]> getUsers() throws SQLException {
+        List<Object[]> data = new ArrayList<>();
+
+        Statement stmt = conn.createStatement();
+        ResultSet rs = stmt.executeQuery("SELECT * FROM uzytkownik");
+
+        while (rs.next()) {
+            data.add(new Object[]{
+                    rs.getInt("id"),
+                    rs.getString("imie"),
+                    rs.getString("nazwisko"),
+                    rs.getInt("nr_tel"),
+                    rs.getDate("data_ur")
+            });
+        }
+
+        return data;
     }
 
 }

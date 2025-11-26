@@ -14,19 +14,24 @@ public class Main {
             UserCRUD userCRUD = new UserCRUD(conn);
             Menu menu = new Menu(sc, userCRUD);
 
-            menu.showMenu();
-            menu.close();
+            // uruchomienie gui
+            new MainWindow(userCRUD);
+
+//            menu.showMenu();
+//            menu.close();
+
         } catch (SQLException e) {
             System.out.println("BLAD BAZY DANYCH" + e.getMessage());
         } catch (IOException e) {
             System.out.println("BLAD I/O" + e.getMessage());
-        } finally {
-            try {
-                dbConnect.closeConnection();
-            } catch (SQLException e) {
-                System.out.println("BLAD BAZY DANYCH" + e.getMessage());
-            }
         }
+//        finally {
+//            try {
+//                dbConnect.closeConnection();
+//            } catch (SQLException e) {
+//                System.out.println("BLAD BAZY DANYCH" + e.getMessage());
+//            }
+//        }
 
     }
 }
