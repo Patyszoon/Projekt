@@ -28,6 +28,8 @@ public class MainWindow extends JFrame{
         JMenuBar menuBar = new JMenuBar();
 
         JMenu fileMenu = new JMenu("Plik");
+        JMenu help = new JMenu("Pomoc");
+        JMenu about = new JMenu("O nas");
 
         JMenuItem newUserItem = new JMenuItem("Nowy uzytkownik");
         JMenuItem showUsersItem = new JMenuItem("Pokaż uzytkowników");
@@ -85,6 +87,8 @@ public class MainWindow extends JFrame{
         fileMenu.add(exitItem);
 
         menuBar.add(fileMenu);
+        menuBar.add(help);
+        menuBar.add(about);
 
         setJMenuBar(menuBar);
     }
@@ -252,7 +256,7 @@ public class MainWindow extends JFrame{
     }
     private void showUsersDialog() throws SQLException {
         // TODO: dodac wyswietlanie uzytkownikow
-        JDialog dialog = new JDialog(this, "Pokaż użytkownika", true);
+        JDialog dialog = new JDialog(this, "Pokaż użytkownika", false);
         dialog.setLocationRelativeTo(null);
         dialog.setSize(500, 400);
         dialog.setResizable(false);
