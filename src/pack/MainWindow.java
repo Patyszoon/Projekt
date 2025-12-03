@@ -1,30 +1,47 @@
 package pack;
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
+import java.awt.event.*;
 import java.sql.SQLException;
 import java.util.List;
 
 public class MainWindow extends JFrame{
 
     private UserCRUD userCRUD;
+    private final JLabel statusBar = new JLabel("Gotowy");
+
     public MainWindow(UserCRUD userCRUD) {
         this.userCRUD = userCRUD;
         setupWindow();
         createMenu();
         setVisible(true); // pokaz okno
-
     }
 
-    private void setupWindow() {
+    private void setupWindow() { //rzeczy w srdoku okna
         setTitle("Tytul okna");
         setSize(500, 400);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE); // zamykaj, gdy x
         setLocationRelativeTo(null);
+
+        //pasek stanu na dole okna
+       statusBar.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
+       statusBar.setOpaque(true);
+       statusBar.setBackground(Color.PINK);
+       add(statusBar, BorderLayout.SOUTH);
+
+
     }
 
-    private void createMenu() {
+    public void setStatusBar(String message) {
+        statusBar.setText(message);
+        Timer timer = new Timer(10000, e ->{
+                statusBar.setText("Gotowy");
+            });
+        timer.setRepeats(false);
+        timer.start();
+    }
+
+    private void createMenu() { //pasek menu u gory
         JMenuBar menuBar = new JMenuBar();
 
         JMenu fileMenu = new JMenu("Plik");
@@ -37,6 +54,38 @@ public class MainWindow extends JFrame{
         JMenuItem delUserItem = new JMenuItem("Usun uzytkownika");
         JMenuItem saveItem = new JMenuItem("Zapisz");
         JMenuItem exitItem = new JMenuItem("Wyjscie");
+
+        MouseAdapter mouseAdapter = new MouseAdapter() {
+            @Override
+            public void mouseEntered(MouseEvent e) {
+                Object src = e.getSource();
+                if (src == menuBar)          setStatusBar("Menu");
+                else if (src == fileMenu)    setStatusBar("Pliki");
+                else if (src == help)        setStatusBar("Help");
+                else if (src == about)       setStatusBar("About");
+                else if (src == newUserItem) setStatusBar("Nowy uzytkownik");
+                else if (src == showUsersItem) setStatusBar("Pokaż uzytkowników");
+                else if (src == editUserItem)  setStatusBar("Edytuj uzytkownika");
+                else if (src == delUserItem)   setStatusBar("Usun uzytkownika");
+                else if (src == saveItem)      setStatusBar("Zapisz");
+                else if (src == exitItem)      setStatusBar("Wyjscie");
+            }
+            @Override
+            public void mouseExited(MouseEvent e) {
+                statusBar.setText("Gotowy");
+            }
+        };
+
+        menuBar.addMouseListener(mouseAdapter);
+        fileMenu.addMouseListener(mouseAdapter);
+        help.addMouseListener(mouseAdapter);
+        about.addMouseListener(mouseAdapter);
+        newUserItem.addMouseListener(mouseAdapter);
+        showUsersItem.addMouseListener(mouseAdapter);
+        editUserItem.addMouseListener(mouseAdapter);
+        delUserItem.addMouseListener(mouseAdapter);
+        saveItem.addMouseListener(mouseAdapter);
+        exitItem.addMouseListener(mouseAdapter);
 
         newUserItem.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
@@ -94,13 +143,12 @@ public class MainWindow extends JFrame{
     }
 
     private void showAddUserDialog() {
-        // TODO: dodac okno dialogowe dodawania uzytkowanika
-
         JDialog dialog = new JDialog(this, "Dodaj użytkownika", true);
         dialog.setLocationRelativeTo(null);
         dialog.setSize(500, 400);
         dialog.setResizable(false);
         dialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
+        setStatusBar("Dodawanie użytkownika...");
 
         JPanel addPanel = new JPanel(new GridLayout(4, 2, 10, 10)); // bez tego nie widac
         addPanel.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
@@ -135,8 +183,10 @@ public class MainWindow extends JFrame{
                 try {
                     userCRUD.insertUser(imie, nazwisko, nrTel, dataUrodzenia);
                     JOptionPane.showMessageDialog(MainWindow.this, "Dodano użytkownika do bazy!");
+                    setStatusBar("Dodano użytkownika: " + imie + " " + nazwisko);
                 } catch (SQLException ex) {
                     JOptionPane.showMessageDialog(MainWindow.this,"BŁĄD! Nie dodano użytkownika!", "ERROR",JOptionPane.ERROR_MESSAGE);
+                    setStatusBar("BŁĄD przy dodawaniu użytkownika!");
                     throw new RuntimeException(ex);
                 }
                 dialog.dispose();
@@ -159,6 +209,7 @@ public class MainWindow extends JFrame{
         dialog.setSize(500, 400);
         dialog.setResizable(false);
         dialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
+        setStatusBar("Edycja użytkownika...");
 
         JPanel addPanel = new JPanel(new GridLayout(4, 2, 10, 10)); // bez tego nie widac
         addPanel.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
@@ -189,8 +240,10 @@ public class MainWindow extends JFrame{
                 try {
                     userCRUD.updateUser(Integer.parseInt(id), pole, zmiana);
                     JOptionPane.showMessageDialog(MainWindow.this, "Edytowano użytkownika o polu id: " + id);
+                    setStatusBar("Edytowano użytkownika o polu id: " + id);
                 } catch (SQLException ex) {
                     JOptionPane.showMessageDialog(MainWindow.this,"BŁĄD!!!", "ERROR",JOptionPane.ERROR_MESSAGE);
+                    setStatusBar("BŁĄD przy edycji użytkownika o polu id: " + id);
                     throw new RuntimeException(ex);
                 }
                 dialog.dispose();
@@ -212,6 +265,7 @@ public class MainWindow extends JFrame{
         dialog.setSize(500, 400);
         dialog.setResizable(false);
         dialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
+        setStatusBar("Usuwanie użytkownika...");
 
         JPanel addPanel = new JPanel(new GridLayout(4, 2, 10, 10)); // bez tego nie widac
         addPanel.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
@@ -237,8 +291,10 @@ public class MainWindow extends JFrame{
                 try {
                     userCRUD.deleteUser(Integer.parseInt(id));
                     JOptionPane.showMessageDialog(MainWindow.this, "Usunięto użytkownika o polu id: " + id);
+                    setStatusBar("Usunięto użytkownika o polu id: " + id);
                 } catch (SQLException ex) {
                     JOptionPane.showMessageDialog(MainWindow.this,"BŁĄD!!!", "ERROR",JOptionPane.ERROR_MESSAGE);
+                    setStatusBar("BŁĄD przy usuwaniu użytkownika o polu id: " + id);
                     throw new RuntimeException(ex);
                 }
                 dialog.dispose();
@@ -255,12 +311,12 @@ public class MainWindow extends JFrame{
         dialog.setVisible(true);
     }
     private void showUsersDialog() throws SQLException {
-        // TODO: dodac wyswietlanie uzytkownikow
         JDialog dialog = new JDialog(this, "Pokaż użytkownika", false);
         dialog.setLocationRelativeTo(null);
         dialog.setSize(500, 400);
         dialog.setResizable(false);
         dialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
+        setStatusBar("Wyświetlanie użytkowników...");
 
         List<Object[]> users = userCRUD.getUsers();
         String[] columnNames = {"ID", "Imię", "Nazwisko", "Nr_tel", "Data_ur"};
