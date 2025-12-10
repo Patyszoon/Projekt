@@ -1,5 +1,6 @@
 package pack;
 import javax.swing.*;
+import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.awt.event.*;
 import java.sql.SQLException;
@@ -9,17 +10,106 @@ public class MainWindow extends JFrame{
 
     private UserCRUD userCRUD;
     private final JLabel statusBar = new JLabel("Gotowy");
+    private JTable mainTable; // glowna tabela w oknie
 
-    public MainWindow(UserCRUD userCRUD) {
+    public MainWindow(UserCRUD userCRUD) throws SQLException{
         this.userCRUD = userCRUD;
         setupWindow();
         createMenu();
         setVisible(true); // pokaz okno
+        initShortcuts();
+    }
+    private void initShortcuts() {
+        // TODO: dodać skróty klawiszowe do akcji (w menu opis jaki skrót do czego)
+        InputMap im = getRootPane().getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW);
+        ActionMap am = getRootPane().getActionMap();
+
+        // Ctrl+S to select
+        im.put(KeyStroke.getKeyStroke(KeyEvent.VK_S, InputEvent.CTRL_DOWN_MASK), "select");
+        am.put("select", new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                selectTableDialog();
+            }
+        });
+        // Ctrl+N to new user
+        im.put(KeyStroke.getKeyStroke(KeyEvent.VK_N, InputEvent.CTRL_DOWN_MASK), "newUser");
+        am.put("newUser", new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                showAddUserDialog();
+            }
+        });
+        // Ctrl+E to edit user
+        im.put(KeyStroke.getKeyStroke(KeyEvent.VK_E, InputEvent.CTRL_DOWN_MASK), "editUser");
+        am.put("editUser", new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                showEditUserDialog();
+            }
+        });
+        // Ctrl+D to delete user
+        im.put(KeyStroke.getKeyStroke(KeyEvent.VK_D, InputEvent.CTRL_DOWN_MASK), "delUser");
+        am.put("delUser", new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                showDelUserDialog();
+            }
+        });
+        // Ctrl+P to show users
+        im.put(KeyStroke.getKeyStroke(KeyEvent.VK_P, InputEvent.CTRL_DOWN_MASK), "showUsers");
+        am.put("showUsers", new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                try {
+                    showUsersDialog();
+                } catch (SQLException ex) {
+                    throw new RuntimeException(ex);
+                }
+            }
+        });
+        // Ctrl+Q to quit
+        im.put(KeyStroke.getKeyStroke(KeyEvent.VK_Q, InputEvent.CTRL_DOWN_MASK), "quit");
+        am.put("quit", new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                System.exit(0);
+            }
+        });
+        // F1 for help
+        im.put(KeyStroke.getKeyStroke(KeyEvent.VK_F1, 0), "help");
+        am.put("help", new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+               showHelpDialog();
+            }
+        });
+        // F2 for about
+        im.put(KeyStroke.getKeyStroke(KeyEvent.VK_F2, 0), "about");
+        am.put("about", new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                showAboutDialog();
+            }
+        });
+        // F5 to refresh
+        im.put(KeyStroke.getKeyStroke(KeyEvent.VK_F5, 0), "refresh");
+        am.put("refresh", new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                dispose();
+                try {
+                    new MainWindow(userCRUD);
+                } catch (SQLException ex) {
+                    throw new RuntimeException(ex);
+                }
+            }
+        });
     }
 
-    private void setupWindow() { //rzeczy w srdoku okna
-        setTitle("Tytul okna");
-        setSize(500, 400);
+    private void setupWindow() throws SQLException{ //rzeczy w srdoku okna
+        setTitle("Aplikacja do zarządzania bazą danych"); // tytuł okna
+        setSize(750, 650);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE); // zamykaj, gdy x
         setLocationRelativeTo(null);
 
@@ -29,6 +119,8 @@ public class MainWindow extends JFrame{
        statusBar.setBackground(Color.PINK);
        add(statusBar, BorderLayout.SOUTH);
 
+       // menu główne
+        add(createMainMenuPanel(), BorderLayout.CENTER);
 
     }
 
@@ -41,19 +133,97 @@ public class MainWindow extends JFrame{
         timer.start();
     }
 
+    private JPanel createMainMenuPanel() throws SQLException {
+        JPanel panel = new JPanel();
+        panel.setLayout(new BoxLayout(panel, BoxLayout.PAGE_AXIS));
+        panel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
+
+        JTextPane textPane = new JTextPane();
+        textPane.setEditable(false);
+        textPane.setOpaque(false);
+        textPane.setBackground(new Color(0,0,0,0));
+        textPane.setFont(new Font("Monospaced", Font.PLAIN, 12));
+        textPane.setCaret(null);
+        textPane.setPreferredSize(new Dimension(200, 100));
+        textPane.setText( "Połączono z bazą danych!" + "\nWybierz opcję z poniższych przycisków lub z menu.");
+        panel.add(textPane);
+
+        // glowna tabela w oknie tworzona tutaj
+        mainTable = new JTable();
+        mainTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        mainTable.getTableHeader().setReorderingAllowed(false);
+
+        JScrollPane tableScroll = new JScrollPane(mainTable);
+        tableScroll.setPreferredSize(new Dimension(700, 300));
+        panel.add(Box.createRigidArea(new Dimension(0, 15)));
+        panel.add(tableScroll);
+
+        // na start załaduj domyślną tabelę uzytkownik
+        try {
+            refreshMainTable("uzytkownik");
+        } catch (SQLException ex) {
+            throw new RuntimeException(ex);
+        }
+
+        // TODO: wyłączenie przycisków w zaleznosci od stanu aplikacji.
+        JButton newUserBtn = new JButton("Nowy użytkownik");
+        JButton showUsersBtn = new JButton("Pokaż użytkowników");
+        JButton editUserBtn = new JButton("Edytuj użytkownika");
+        JButton delUserBtn = new JButton("Usuń użytkownika");
+
+        newUserBtn.addActionListener(e -> showAddUserDialog());
+        showUsersBtn.addActionListener(e -> {
+            try {
+                showUsersDialog();
+            } catch (SQLException ex) {
+                throw new RuntimeException(ex);
+            }
+        });
+        editUserBtn.addActionListener(e -> showEditUserDialog());
+        delUserBtn.addActionListener(e -> showDelUserDialog());
+
+        MouseAdapter mouseAdapter = new MouseAdapter() {
+            @Override
+            public void mouseEntered(MouseEvent e) {
+                Object src = e.getSource();
+                if (src == newUserBtn)        setStatusBar("Nowy użytkownik");
+                else if (src == showUsersBtn) setStatusBar("Pokaż użytkowników");
+                else if (src == editUserBtn)  setStatusBar("Edytuj użytkownika");
+                else if (src == delUserBtn)   setStatusBar("Usuń użytkownika");
+            }
+            @Override
+            public void mouseExited(MouseEvent e) {
+                statusBar.setText("Gotowy");
+            }
+        };
+
+        newUserBtn.addMouseListener(mouseAdapter);
+        showUsersBtn.addMouseListener(mouseAdapter);
+        editUserBtn.addMouseListener(mouseAdapter);
+        delUserBtn.addMouseListener(mouseAdapter);
+
+        panel.add(newUserBtn);
+        panel.add(showUsersBtn);
+        panel.add(editUserBtn);
+        panel.add(delUserBtn);
+
+        return panel;
+    }
+
     private void createMenu() { //pasek menu u gory
         JMenuBar menuBar = new JMenuBar();
 
         JMenu fileMenu = new JMenu("Plik");
-        JMenu help = new JMenu("Pomoc");
-        JMenu about = new JMenu("O nas");
+        JMenu helpMenu = new JMenu("Pomoc");
 
         JMenuItem newUserItem = new JMenuItem("Nowy uzytkownik");
         JMenuItem showUsersItem = new JMenuItem("Pokaż uzytkowników");
         JMenuItem editUserItem = new JMenuItem("Edytuj uzytkownika");
         JMenuItem delUserItem = new JMenuItem("Usun uzytkownika");
-        JMenuItem saveItem = new JMenuItem("Zapisz");
+        JMenuItem selectTableItem = new JMenuItem("Wybierz tabele");
         JMenuItem exitItem = new JMenuItem("Wyjscie");
+        JMenuItem aboutItem = new JMenuItem("O nas");
+        JMenuItem helpItem = new JMenuItem("Pomoc");
 
         MouseAdapter mouseAdapter = new MouseAdapter() {
             @Override
@@ -61,13 +231,14 @@ public class MainWindow extends JFrame{
                 Object src = e.getSource();
                 if (src == menuBar)          setStatusBar("Menu");
                 else if (src == fileMenu)    setStatusBar("Pliki");
-                else if (src == help)        setStatusBar("Help");
-                else if (src == about)       setStatusBar("About");
+                else if (src == helpMenu)        setStatusBar("Pomoc");
+                else if (src == aboutItem)       setStatusBar("O nas");
+                else if (src == helpItem)   setStatusBar("Pomoc");
                 else if (src == newUserItem) setStatusBar("Nowy uzytkownik");
                 else if (src == showUsersItem) setStatusBar("Pokaż uzytkowników");
                 else if (src == editUserItem)  setStatusBar("Edytuj uzytkownika");
                 else if (src == delUserItem)   setStatusBar("Usun uzytkownika");
-                else if (src == saveItem)      setStatusBar("Zapisz");
+                else if (src == selectTableItem)      setStatusBar("Wybierz tabele");
                 else if (src == exitItem)      setStatusBar("Wyjscie");
             }
             @Override
@@ -78,13 +249,14 @@ public class MainWindow extends JFrame{
 
         menuBar.addMouseListener(mouseAdapter);
         fileMenu.addMouseListener(mouseAdapter);
-        help.addMouseListener(mouseAdapter);
-        about.addMouseListener(mouseAdapter);
+        helpMenu.addMouseListener(mouseAdapter);
+        aboutItem.addMouseListener(mouseAdapter);
+        helpItem.addMouseListener(mouseAdapter);
         newUserItem.addMouseListener(mouseAdapter);
         showUsersItem.addMouseListener(mouseAdapter);
         editUserItem.addMouseListener(mouseAdapter);
         delUserItem.addMouseListener(mouseAdapter);
-        saveItem.addMouseListener(mouseAdapter);
+        selectTableItem.addMouseListener(mouseAdapter);
         exitItem.addMouseListener(mouseAdapter);
 
         newUserItem.addActionListener(new ActionListener() {
@@ -115,9 +287,9 @@ public class MainWindow extends JFrame{
             }
         });
 
-        saveItem.addActionListener(new ActionListener() {
+        selectTableItem.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                JOptionPane.showMessageDialog(MainWindow.this, "Zapisywanie...");
+                selectTableDialog();
             }
         });
 
@@ -127,19 +299,134 @@ public class MainWindow extends JFrame{
             }
         });
 
+        helpItem.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                showHelpDialog();
+            }
+        });
+
+        aboutItem.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                showAboutDialog();
+            }
+        });
+
         // dodac itemy do tego file menu
         fileMenu.add(newUserItem);
         fileMenu.add(showUsersItem);
         fileMenu.add(editUserItem);
         fileMenu.add(delUserItem);
-        fileMenu.add(saveItem);
+        fileMenu.add(selectTableItem);
         fileMenu.add(exitItem);
+        helpMenu.add(helpItem);
+        helpMenu.add(aboutItem);
 
         menuBar.add(fileMenu);
-        menuBar.add(help);
-        menuBar.add(about);
+        menuBar.add(helpMenu);
 
         setJMenuBar(menuBar);
+    }
+
+    private void refreshMainTable(String tableName) throws SQLException{
+        List<Object[]> rows;
+        String[] columnNames;
+
+        switch(tableName){
+            case "uzytkownik":
+                rows = userCRUD.getUsers();
+                columnNames = new String[]{"ID", "Imię", "Nazwisko", "Nr_tel", "Data_ur"};
+                // tutaj kod do odswiezenia tabeli uzytkownikow
+                break;
+            // case inna tabela:
+                // rows = ...
+                // columnNames = ...
+                // break;
+            default:
+                return;
+        }
+
+        Object[][] tableData = new Object[rows.size()][];
+        for (int i = 0; i < rows.size(); i++) {
+            tableData[i] = rows.get(i);
+        };
+
+        DefaultTableModel model = new DefaultTableModel(tableData, columnNames) {
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                return false; // nie mozna edytowac komorek
+            }
+        };
+
+        if (mainTable != null) {
+            mainTable.setModel(model);
+        }
+
+    }
+
+    private void showHelpDialog(){
+        JOptionPane.showMessageDialog(MainWindow.this,
+                "Skróty klawiszowe:\n" +
+                        "Ctrl+N - Nowy użytkownik\n" +
+                        "Ctrl+P - Pokaż użytkowników\n" +
+                        "Ctrl+E - Edytuj użytkownika\n" +
+                        "Ctrl+D - Usuń użytkownika\n" +
+                        "Ctrl+S - Wybierz tabele\n" +
+                        "Ctrl+Q - Wyjście\n" +
+                        "F1 - Pomoc\n" +
+                        "F2 - O nas",
+                "Pomoc", JOptionPane.INFORMATION_MESSAGE);
+    }
+
+    private void showAboutDialog(){
+        JOptionPane.showMessageDialog(MainWindow.this,
+                "Aplikacja do zarządzania użytkownikami.\n" +
+                        "Wersja 1.0\n" +
+                        "Autorzy: Patrycja Woźniak, Wiktoria Kowalczuk",
+                "O nas", JOptionPane.INFORMATION_MESSAGE);
+    }
+
+    private String selectTableDialog(){
+        JDialog dialog = new JDialog(this, "Wybierz tabele",true);
+        dialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
+        dialog.setLocationRelativeTo(null);
+        dialog.setSize(300,200);
+        dialog.setResizable(false);
+
+        setStatusBar("Wybieranie tabeli...");
+
+        JPanel panel = new JPanel(new BorderLayout());
+        String[] tables = {"uzytkownik"}; // mozna dodac wiecej
+
+        JComboBox<String> tableComboBox = new JComboBox<>(tables);
+        panel.add(tableComboBox, BorderLayout.CENTER);
+
+        JButton selectButton = new JButton("Wybierz");
+        panel.add(selectButton, BorderLayout.SOUTH);
+
+        final String[] selectedTable = {null};
+
+        selectButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                selectedTable[0] = (String) tableComboBox.getSelectedItem();
+
+                try {
+                    refreshMainTable(selectedTable[0]); // przeladuj mainTable
+                } catch (SQLException ex) {
+                    throw new RuntimeException(ex);
+                }
+
+                JOptionPane.showMessageDialog(MainWindow.this,
+                        "Wybrano tabelę: " + selectedTable[0],
+                        "Informacja", JOptionPane.INFORMATION_MESSAGE);
+                setStatusBar("Wybrano tabelę: " + selectedTable[0]);
+
+                dialog.dispose();
+            }
+        });
+
+        dialog.add(panel);
+        dialog.setVisible(true);
+        return selectedTable[0];
     }
 
     private void showAddUserDialog() {
@@ -179,7 +466,7 @@ public class MainWindow extends JFrame{
                 String nrTel = nrTelField.getText();
                 String dataUrodzenia = dataUrField.getText();
 
-                // TODO: dodac sprawdzanie poprawnosci pol
+                // TODO: dodac sprawdzanie poprawnosci pol + refresh tabeli
                 try {
                     userCRUD.insertUser(imie, nazwisko, nrTel, dataUrodzenia);
                     JOptionPane.showMessageDialog(MainWindow.this, "Dodano użytkownika do bazy!");
@@ -236,7 +523,7 @@ public class MainWindow extends JFrame{
                 String pole = poleField.getSelectedItem().toString();
                 String zmiana = zmianaField.getText();
 
-                // TODO: dodac sprawdzanie poprawnosci pol
+                // TODO: dodac sprawdzanie poprawnosci pol + refresh tabeli
                 try {
                     userCRUD.updateUser(Integer.parseInt(id), pole, zmiana);
                     JOptionPane.showMessageDialog(MainWindow.this, "Edytowano użytkownika o polu id: " + id);
@@ -287,7 +574,7 @@ public class MainWindow extends JFrame{
                         "Czy napewno chcesz usunąć użytkownika?.\n"
                                 + "Tej akcji nie można cofnąć.", "Potwierdź",
                         JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
-                // TODO: dodac sprawdzanie poprawnosci pol
+                // TODO: dodac sprawdzanie poprawnosci pol + refresh tabeli
                 try {
                     userCRUD.deleteUser(Integer.parseInt(id));
                     JOptionPane.showMessageDialog(MainWindow.this, "Usunięto użytkownika o polu id: " + id);
@@ -324,9 +611,20 @@ public class MainWindow extends JFrame{
         Object[][] tableData = new Object[users.size()][];
         for (int i = 0; i < users.size(); i++) {
             tableData[i] = users.get(i);
-        }
+        };
+
+        DefaultTableModel model = new DefaultTableModel(tableData, columnNames) {
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                return false; //brak możliwości edycji komórek
+            }
+        };
 
         JTable table = new JTable(tableData, columnNames);
+        table.setEditingColumn(0);
+        table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        table.setModel(model);
+
         JScrollPane scrollPane = new JScrollPane(table);
         dialog.pack();
 
