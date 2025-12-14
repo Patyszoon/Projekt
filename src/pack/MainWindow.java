@@ -8,104 +8,48 @@ import java.util.List;
 
 public class MainWindow extends JFrame{
 
+    public enum appState {
+        READY,
+        NO_CONNECTION,
+    }
+    private appState currentState = appState.READY;
     private UserCRUD userCRUD;
+    // TODO: zmiana statusu aplikacji (NO_CONNECTION, READY itp) i dostosowanie UI do tego
+    //  (jak jest NO_CONNECTION to po ruszaniu kursorem żeby nie znieniał się na "Gotowy")
     private final JLabel statusBar = new JLabel("Gotowy");
     private JTable mainTable; // glowna tabela w oknie
+    private JTextPane infoPane;
+    private String currentTable = null;
+
+    // przyciski
+    private JButton newUserBtn;
+    private JButton showUsersBtn;
+    private JButton editUserBtn;
+    private JButton delUserBtn;
+
+    // pozycje menu
+    private JMenuItem newUserItem;
+    private JMenuItem showUsersItem;
+    private JMenuItem editUserItem;
+    private JMenuItem delUserItem;
+    private JMenuItem selectTableItem;
+
+    public UserCRUD getUserCRUD() {
+        return userCRUD;
+    }
+    public appState getCurrentState() {
+        return currentState;
+    }
 
     public MainWindow(UserCRUD userCRUD) throws SQLException{
         this.userCRUD = userCRUD;
         setupWindow();
         createMenu();
+        updateUiState(appState.NO_CONNECTION);
         setVisible(true); // pokaz okno
-        initShortcuts();
+        new Shortcuts(this);
     }
-    private void initShortcuts() {
-        // TODO: dodać skróty klawiszowe do akcji (w menu opis jaki skrót do czego)
-        InputMap im = getRootPane().getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW);
-        ActionMap am = getRootPane().getActionMap();
 
-        // Ctrl+S to select
-        im.put(KeyStroke.getKeyStroke(KeyEvent.VK_S, InputEvent.CTRL_DOWN_MASK), "select");
-        am.put("select", new AbstractAction() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                selectTableDialog();
-            }
-        });
-        // Ctrl+N to new user
-        im.put(KeyStroke.getKeyStroke(KeyEvent.VK_N, InputEvent.CTRL_DOWN_MASK), "newUser");
-        am.put("newUser", new AbstractAction() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                showAddUserDialog();
-            }
-        });
-        // Ctrl+E to edit user
-        im.put(KeyStroke.getKeyStroke(KeyEvent.VK_E, InputEvent.CTRL_DOWN_MASK), "editUser");
-        am.put("editUser", new AbstractAction() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                showEditUserDialog();
-            }
-        });
-        // Ctrl+D to delete user
-        im.put(KeyStroke.getKeyStroke(KeyEvent.VK_D, InputEvent.CTRL_DOWN_MASK), "delUser");
-        am.put("delUser", new AbstractAction() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                showDelUserDialog();
-            }
-        });
-        // Ctrl+P to show users
-        im.put(KeyStroke.getKeyStroke(KeyEvent.VK_P, InputEvent.CTRL_DOWN_MASK), "showUsers");
-        am.put("showUsers", new AbstractAction() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                try {
-                    showUsersDialog();
-                } catch (SQLException ex) {
-                    throw new RuntimeException(ex);
-                }
-            }
-        });
-        // Ctrl+Q to quit
-        im.put(KeyStroke.getKeyStroke(KeyEvent.VK_Q, InputEvent.CTRL_DOWN_MASK), "quit");
-        am.put("quit", new AbstractAction() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                System.exit(0);
-            }
-        });
-        // F1 for help
-        im.put(KeyStroke.getKeyStroke(KeyEvent.VK_F1, 0), "help");
-        am.put("help", new AbstractAction() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-               showHelpDialog();
-            }
-        });
-        // F2 for about
-        im.put(KeyStroke.getKeyStroke(KeyEvent.VK_F2, 0), "about");
-        am.put("about", new AbstractAction() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                showAboutDialog();
-            }
-        });
-        // F5 to refresh
-        im.put(KeyStroke.getKeyStroke(KeyEvent.VK_F5, 0), "refresh");
-        am.put("refresh", new AbstractAction() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                dispose();
-                try {
-                    new MainWindow(userCRUD);
-                } catch (SQLException ex) {
-                    throw new RuntimeException(ex);
-                }
-            }
-        });
-    }
 
     private void setupWindow() throws SQLException{ //rzeczy w srdoku okna
         setTitle("Aplikacja do zarządzania bazą danych"); // tytuł okna
@@ -138,15 +82,15 @@ public class MainWindow extends JFrame{
         panel.setLayout(new BoxLayout(panel, BoxLayout.PAGE_AXIS));
         panel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
 
-        JTextPane textPane = new JTextPane();
-        textPane.setEditable(false);
-        textPane.setOpaque(false);
-        textPane.setBackground(new Color(0,0,0,0));
-        textPane.setFont(new Font("Monospaced", Font.PLAIN, 12));
-        textPane.setCaret(null);
-        textPane.setPreferredSize(new Dimension(200, 100));
-        textPane.setText( "Połączono z bazą danych!" + "\nWybierz opcję z poniższych przycisków lub z menu.");
-        panel.add(textPane);
+        infoPane = new JTextPane();
+        infoPane.setEditable(false);
+        infoPane.setOpaque(false);
+        infoPane.setBackground(new Color(0,0,0,0));
+        infoPane.setFont(new Font("Monospaced", Font.PLAIN, 12));
+        infoPane.setCaret(null);
+        infoPane.setPreferredSize(new Dimension(200, 100));
+        infoPane.setText("Brak wybranej tabeli.\n" + "Wybierz tabelę z menu 'Plik -> Wybierz tabele' lub użyj skrótu Ctrl+S");
+        panel.add(infoPane);
 
         // glowna tabela w oknie tworzona tutaj
         mainTable = new JTable();
@@ -158,18 +102,10 @@ public class MainWindow extends JFrame{
         panel.add(Box.createRigidArea(new Dimension(0, 15)));
         panel.add(tableScroll);
 
-        // na start załaduj domyślną tabelę uzytkownik
-        try {
-            refreshMainTable("uzytkownik");
-        } catch (SQLException ex) {
-            throw new RuntimeException(ex);
-        }
-
-        // TODO: wyłączenie przycisków w zaleznosci od stanu aplikacji.
-        JButton newUserBtn = new JButton("Nowy użytkownik");
-        JButton showUsersBtn = new JButton("Pokaż użytkowników");
-        JButton editUserBtn = new JButton("Edytuj użytkownika");
-        JButton delUserBtn = new JButton("Usuń użytkownika");
+        newUserBtn = new JButton("Nowy użytkownik");
+        showUsersBtn = new JButton("Pokaż użytkowników");
+        editUserBtn = new JButton("Edytuj użytkownika");
+        delUserBtn = new JButton("Usuń użytkownika");
 
         newUserBtn.addActionListener(e -> showAddUserDialog());
         showUsersBtn.addActionListener(e -> {
@@ -216,12 +152,28 @@ public class MainWindow extends JFrame{
         JMenu fileMenu = new JMenu("Plik");
         JMenu helpMenu = new JMenu("Pomoc");
 
-        JMenuItem newUserItem = new JMenuItem("Nowy uzytkownik");
-        JMenuItem showUsersItem = new JMenuItem("Pokaż uzytkowników");
-        JMenuItem editUserItem = new JMenuItem("Edytuj uzytkownika");
-        JMenuItem delUserItem = new JMenuItem("Usun uzytkownika");
-        JMenuItem selectTableItem = new JMenuItem("Wybierz tabele");
+        newUserItem = new JMenuItem("Nowy uzytkownik");
+        newUserItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_N, InputEvent.CTRL_DOWN_MASK));
+        newUserItem.setToolTipText("Ctrl+N - dodaj nowego użytkownika");
+
+        showUsersItem = new JMenuItem("Pokaż uzytkowników");
+        showUsersItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_P, InputEvent.CTRL_DOWN_MASK));
+        showUsersItem.setToolTipText("Ctrl+P - pokaż użytkowników");
+
+        editUserItem = new JMenuItem("Edytuj uzytkownika");
+        editUserItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_E, InputEvent.CTRL_DOWN_MASK));
+        editUserItem.setToolTipText("Ctrl+E - edytuj użytkownika");
+
+        delUserItem = new JMenuItem("Usun uzytkownika");
+        delUserItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_D, InputEvent.CTRL_DOWN_MASK));
+        delUserItem.setToolTipText("Ctrl+D - usun uzytkownika");
+
+        selectTableItem = new JMenuItem("Wybierz tabele");
+        selectTableItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_S, InputEvent.CTRL_DOWN_MASK));
+        selectTableItem.setToolTipText("Ctrl+S - wybierz tabele");
+
         JMenuItem exitItem = new JMenuItem("Wyjscie");
+        exitItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_Q, InputEvent.CTRL_DOWN_MASK));
         JMenuItem aboutItem = new JMenuItem("O nas");
         JMenuItem helpItem = new JMenuItem("Pomoc");
 
@@ -327,7 +279,51 @@ public class MainWindow extends JFrame{
         setJMenuBar(menuBar);
     }
 
+    private void updateUiState(appState newState) {
+        this.currentState = newState;
+
+        boolean enabled = (newState == appState.READY);
+
+        // przyciski
+        if (newUserBtn != null)      newUserBtn.setEnabled(enabled);
+        if (showUsersBtn != null)    showUsersBtn.setEnabled(enabled);
+        if (editUserBtn != null)     editUserBtn.setEnabled(enabled);
+        if (delUserBtn != null)      delUserBtn.setEnabled(enabled);
+
+        // pozycje menu
+        if (newUserItem != null)     newUserItem.setEnabled(enabled);
+        if (showUsersItem != null)   showUsersItem.setEnabled(enabled);
+        if (editUserItem != null)    editUserItem.setEnabled(enabled);
+        if (delUserItem != null)     delUserItem.setEnabled(enabled);
+
+        // Info nad tabelką
+        if(infoPane !=null){
+            switch (newState){
+                case READY:
+                    infoPane.setText("Połączono z bazą danych!" + "\nWybierz opcję z poniższych przycisków lub z menu.");
+                    break;
+                case NO_CONNECTION:
+                    infoPane.setText("Brak wybranej tabeli.\n" + "Wybierz tabelę z menu 'Plik -> Wybierz tabele' lub użyj skrótu Ctrl+S");
+                    break;
+            }
+        }
+        // pasek stanu
+        switch (newState) {
+            case READY:
+                setStatusBar("Gotowy");
+                break;
+            case NO_CONNECTION:
+                setStatusBar("Brak połączenia z bazą. Proszę wybrać tabelę z menu.");
+                break;
+        }
+    }
+
     private void refreshMainTable(String tableName) throws SQLException{
+        if(currentTable == null){
+            updateUiState(appState.NO_CONNECTION);
+            return;
+        }
+
         List<Object[]> rows;
         String[] columnNames;
 
@@ -335,7 +331,6 @@ public class MainWindow extends JFrame{
             case "uzytkownik":
                 rows = userCRUD.getUsers();
                 columnNames = new String[]{"ID", "Imię", "Nazwisko", "Nr_tel", "Data_ur"};
-                // tutaj kod do odswiezenia tabeli uzytkownikow
                 break;
             // case inna tabela:
                 // rows = ...
@@ -360,10 +355,32 @@ public class MainWindow extends JFrame{
         if (mainTable != null) {
             mainTable.setModel(model);
         }
+        // TableRowSorter z komparatorem dla kolumny ID
+        javax.swing.table.TableRowSorter<DefaultTableModel> sorter =
+                new javax.swing.table.TableRowSorter<>(model);
 
+        java.util.Comparator<Object> idComparator = (o1, o2) -> {
+            try {
+                if (o1 instanceof Number && o2 instanceof Number) {
+                    return Integer.compare(((Number)o1).intValue(), ((Number)o2).intValue());
+                }
+                int i1 = Integer.parseInt(o1.toString());
+                int i2 = Integer.parseInt(o2.toString());
+                return Integer.compare(i1, i2);
+            } catch (Exception ex) {
+                return o1.toString().compareTo(o2.toString());
+            }
+        };
+
+        sorter.setComparator(0, idComparator);
+        mainTable.setRowSorter(sorter);
+
+        updateUiState(appState.READY);
+
+        // opcjonalnie: włączenie wizualnego sortowania nagłówka pozostaje domyślne
     }
 
-    private void showHelpDialog(){
+    void showHelpDialog(){
         JOptionPane.showMessageDialog(MainWindow.this,
                 "Skróty klawiszowe:\n" +
                         "Ctrl+N - Nowy użytkownik\n" +
@@ -373,11 +390,12 @@ public class MainWindow extends JFrame{
                         "Ctrl+S - Wybierz tabele\n" +
                         "Ctrl+Q - Wyjście\n" +
                         "F1 - Pomoc\n" +
-                        "F2 - O nas",
+                        "F2 - O nas\n" +
+                        "F5 - Odśwież tabelę",
                 "Pomoc", JOptionPane.INFORMATION_MESSAGE);
     }
 
-    private void showAboutDialog(){
+    void showAboutDialog(){
         JOptionPane.showMessageDialog(MainWindow.this,
                 "Aplikacja do zarządzania użytkownikami.\n" +
                         "Wersja 1.0\n" +
@@ -385,7 +403,7 @@ public class MainWindow extends JFrame{
                 "O nas", JOptionPane.INFORMATION_MESSAGE);
     }
 
-    private String selectTableDialog(){
+    String selectTableDialog(){
         JDialog dialog = new JDialog(this, "Wybierz tabele",true);
         dialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
         dialog.setLocationRelativeTo(null);
@@ -408,10 +426,11 @@ public class MainWindow extends JFrame{
         selectButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 selectedTable[0] = (String) tableComboBox.getSelectedItem();
-
                 try {
-                    refreshMainTable(selectedTable[0]); // przeladuj mainTable
+                    currentTable = selectedTable[0];
+                    refreshMainTable(currentTable); // przeladuj mainTable
                 } catch (SQLException ex) {
+                    updateUiState(appState.NO_CONNECTION);
                     throw new RuntimeException(ex);
                 }
 
@@ -429,7 +448,7 @@ public class MainWindow extends JFrame{
         return selectedTable[0];
     }
 
-    private void showAddUserDialog() {
+    void showAddUserDialog() {
         JDialog dialog = new JDialog(this, "Dodaj użytkownika", true);
         dialog.setLocationRelativeTo(null);
         dialog.setSize(500, 400);
@@ -471,6 +490,7 @@ public class MainWindow extends JFrame{
                     userCRUD.insertUser(imie, nazwisko, nrTel, dataUrodzenia);
                     JOptionPane.showMessageDialog(MainWindow.this, "Dodano użytkownika do bazy!");
                     setStatusBar("Dodano użytkownika: " + imie + " " + nazwisko);
+                    refreshMainTable(currentTable);
                 } catch (SQLException ex) {
                     JOptionPane.showMessageDialog(MainWindow.this,"BŁĄD! Nie dodano użytkownika!", "ERROR",JOptionPane.ERROR_MESSAGE);
                     setStatusBar("BŁĄD przy dodawaniu użytkownika!");
@@ -489,7 +509,7 @@ public class MainWindow extends JFrame{
         dialog.add(buttonPanel, BorderLayout.SOUTH);
         dialog.setVisible(true);
     }
-    private void showEditUserDialog() {
+    void showEditUserDialog() {
         String poleSql[] = {"imie", "nazwisko", "nr_tel", "data_ur"};
         JDialog dialog = new JDialog(this, "Edytuj użytkownika", true);
         dialog.setLocationRelativeTo(null);
@@ -528,6 +548,7 @@ public class MainWindow extends JFrame{
                     userCRUD.updateUser(Integer.parseInt(id), pole, zmiana);
                     JOptionPane.showMessageDialog(MainWindow.this, "Edytowano użytkownika o polu id: " + id);
                     setStatusBar("Edytowano użytkownika o polu id: " + id);
+                    refreshMainTable(currentTable);
                 } catch (SQLException ex) {
                     JOptionPane.showMessageDialog(MainWindow.this,"BŁĄD!!!", "ERROR",JOptionPane.ERROR_MESSAGE);
                     setStatusBar("BŁĄD przy edycji użytkownika o polu id: " + id);
@@ -546,7 +567,7 @@ public class MainWindow extends JFrame{
         dialog.add(buttonPanel, BorderLayout.SOUTH);
         dialog.setVisible(true);
     }
-    private void showDelUserDialog() {
+    void showDelUserDialog() {
         JDialog dialog = new JDialog(this, "Usuń użytkownika", true);
         dialog.setLocationRelativeTo(null);
         dialog.setSize(500, 400);
@@ -579,6 +600,7 @@ public class MainWindow extends JFrame{
                     userCRUD.deleteUser(Integer.parseInt(id));
                     JOptionPane.showMessageDialog(MainWindow.this, "Usunięto użytkownika o polu id: " + id);
                     setStatusBar("Usunięto użytkownika o polu id: " + id);
+                    refreshMainTable(currentTable);
                 } catch (SQLException ex) {
                     JOptionPane.showMessageDialog(MainWindow.this,"BŁĄD!!!", "ERROR",JOptionPane.ERROR_MESSAGE);
                     setStatusBar("BŁĄD przy usuwaniu użytkownika o polu id: " + id);
@@ -597,7 +619,9 @@ public class MainWindow extends JFrame{
         dialog.add(buttonPanel, BorderLayout.SOUTH);
         dialog.setVisible(true);
     }
-    private void showUsersDialog() throws SQLException {
+    void showUsersDialog() throws SQLException {
+        // TODO: zmiana pasku stanu przy zaznaczeniu filtru w tabeli (filtr uaktywnia sie po kliknieciu w nazwe kolumny)
+
         JDialog dialog = new JDialog(this, "Pokaż użytkownika", false);
         dialog.setLocationRelativeTo(null);
         dialog.setSize(500, 400);
@@ -625,9 +649,25 @@ public class MainWindow extends JFrame{
         table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         table.setModel(model);
 
-        JScrollPane scrollPane = new JScrollPane(table);
-        dialog.pack();
+        javax.swing.table.TableRowSorter<DefaultTableModel> sorter = new javax.swing.table.TableRowSorter<>(model);
 
+        java.util.Comparator<Object> idComparator = (o1, o2) -> {
+            try {
+                if (o1 instanceof Number && o2 instanceof Number) {
+                    return Integer.compare(((Number)o1).intValue(), ((Number)o2).intValue());
+                }
+                int i1 = Integer.parseInt(o1.toString());
+                int i2 = Integer.parseInt(o2.toString());
+                return Integer.compare(i1, i2);
+            } catch (Exception ex) {
+                return o1.toString().compareTo(o2.toString());
+            }
+        };
+
+        sorter.setComparator(0, idComparator);
+        table.setRowSorter(sorter);
+
+        JScrollPane scrollPane = new JScrollPane(table);
         dialog.getContentPane().add(scrollPane);
         dialog.pack();
         dialog.setVisible(true);
