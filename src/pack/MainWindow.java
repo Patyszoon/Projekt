@@ -14,9 +14,10 @@ public class MainWindow extends JFrame{
     }
     private appState currentState = appState.READY;
     private UserCRUD userCRUD;
+    private StatusBarManager statusBarManager;
     // TODO: zmiana statusu aplikacji (NO_CONNECTION, READY itp) i dostosowanie UI do tego
     //  (jak jest NO_CONNECTION to po ruszaniu kursorem żeby nie znieniał się na "Gotowy")
-    private final JLabel statusBar = new JLabel("Gotowy");
+
     private JTable mainTable; // glowna tabela w oknie
     private JTextPane infoPane;
     private String currentTable = null;
@@ -57,24 +58,13 @@ public class MainWindow extends JFrame{
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE); // zamykaj, gdy x
         setLocationRelativeTo(null);
 
-        //pasek stanu na dole okna
-       statusBar.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
-       statusBar.setOpaque(true);
-       statusBar.setBackground(Color.PINK);
-       add(statusBar, BorderLayout.SOUTH);
+        // status bar
+        statusBarManager = new StatusBarManager();
+        add(statusBarManager.getStatusBar(), BorderLayout.SOUTH);
 
        // menu główne
         add(createMainMenuPanel(), BorderLayout.CENTER);
 
-    }
-
-    public void setStatusBar(String message) {
-        statusBar.setText(message);
-        Timer timer = new Timer(10000, e ->{
-                statusBar.setText("Gotowy");
-            });
-        timer.setRepeats(false);
-        timer.start();
     }
 
     private JPanel createMainMenuPanel() throws SQLException {
@@ -129,7 +119,7 @@ public class MainWindow extends JFrame{
             }
             @Override
             public void mouseExited(MouseEvent e) {
-                statusBar.setText("Gotowy");
+                statusBarManager.setStatusPermanent("Gotowy");
             }
         };
 
@@ -195,7 +185,7 @@ public class MainWindow extends JFrame{
             }
             @Override
             public void mouseExited(MouseEvent e) {
-                statusBar.setText("Gotowy");
+                statusBarManager.setStatusPermanent("Gotowy");
             }
         };
 
@@ -310,10 +300,10 @@ public class MainWindow extends JFrame{
         // pasek stanu
         switch (newState) {
             case READY:
-                setStatusBar("Gotowy");
+                statusBarManager.setStatusPermanent("Gotowy");
                 break;
             case NO_CONNECTION:
-                setStatusBar("Brak połączenia z bazą. Proszę wybrać tabelę z menu.");
+                statusBarManager.setStatusPermanent("Brak połączenia z bazą. Proszę wybrać tabelę z menu.");
                 break;
         }
     }
@@ -671,5 +661,9 @@ public class MainWindow extends JFrame{
         dialog.getContentPane().add(scrollPane);
         dialog.pack();
         dialog.setVisible(true);
+    }
+
+    public void setStatusBar(String message) {
+        statusBarManager.setStatus(message);
     }
 }
