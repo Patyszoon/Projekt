@@ -18,9 +18,8 @@ public class MainWindow extends JFrame{
     // TODO: zmiana statusu aplikacji (NO_CONNECTION, READY itp) i dostosowanie UI do tego
     //  (jak jest NO_CONNECTION to po ruszaniu kursorem żeby nie znieniał się na "Gotowy")
 
-    private JTable mainTable; // glowna tabela w oknie
+    private TableManager tableManager;
     private JTextPane infoPane;
-    private String currentTable = null;
 
     // przyciski
     private JButton newUserBtn;
@@ -82,12 +81,11 @@ public class MainWindow extends JFrame{
         infoPane.setText("Brak wybranej tabeli.\n" + "Wybierz tabelę z menu 'Plik -> Wybierz tabele' lub użyj skrótu Ctrl+S");
         panel.add(infoPane);
 
-        // glowna tabela w oknie tworzona tutaj
-        mainTable = new JTable();
-        mainTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-        mainTable.getTableHeader().setReorderingAllowed(false);
+        // inicjalizacja TableManager
+        JTable mainTable = new JTable(); // zmienna lokalna
+        tableManager = new TableManager(mainTable, userCRUD);
 
-        JScrollPane tableScroll = new JScrollPane(mainTable);
+        JScrollPane tableScroll = new JScrollPane(tableManager.getTable());
         tableScroll.setPreferredSize(new Dimension(700, 300));
         panel.add(Box.createRigidArea(new Dimension(0, 15)));
         panel.add(tableScroll);
@@ -119,7 +117,7 @@ public class MainWindow extends JFrame{
             }
             @Override
             public void mouseExited(MouseEvent e) {
-                statusBarManager.setStatusPermanent("Gotowy");
+                statusBarManager.setStatus("Gotowy");
             }
         };
 
@@ -308,66 +306,14 @@ public class MainWindow extends JFrame{
         }
     }
 
-    private void refreshMainTable(String tableName) throws SQLException{
-        if(currentTable == null){
+    private void refreshMainTable(String tableName) throws SQLException {
+        if (tableName == null) {
             updateUiState(appState.NO_CONNECTION);
             return;
         }
 
-        List<Object[]> rows;
-        String[] columnNames;
-
-        switch(tableName){
-            case "uzytkownik":
-                rows = userCRUD.getUsers();
-                columnNames = new String[]{"ID", "Imię", "Nazwisko", "Nr_tel", "Data_ur"};
-                break;
-            // case inna tabela:
-                // rows = ...
-                // columnNames = ...
-                // break;
-            default:
-                return;
-        }
-
-        Object[][] tableData = new Object[rows.size()][];
-        for (int i = 0; i < rows.size(); i++) {
-            tableData[i] = rows.get(i);
-        };
-
-        DefaultTableModel model = new DefaultTableModel(tableData, columnNames) {
-            @Override
-            public boolean isCellEditable(int row, int column) {
-                return false; // nie mozna edytowac komorek
-            }
-        };
-
-        if (mainTable != null) {
-            mainTable.setModel(model);
-        }
-        // TableRowSorter z komparatorem dla kolumny ID
-        javax.swing.table.TableRowSorter<DefaultTableModel> sorter =
-                new javax.swing.table.TableRowSorter<>(model);
-
-        java.util.Comparator<Object> idComparator = (o1, o2) -> {
-            try {
-                if (o1 instanceof Number && o2 instanceof Number) {
-                    return Integer.compare(((Number)o1).intValue(), ((Number)o2).intValue());
-                }
-                int i1 = Integer.parseInt(o1.toString());
-                int i2 = Integer.parseInt(o2.toString());
-                return Integer.compare(i1, i2);
-            } catch (Exception ex) {
-                return o1.toString().compareTo(o2.toString());
-            }
-        };
-
-        sorter.setComparator(0, idComparator);
-        mainTable.setRowSorter(sorter);
-
+        tableManager.refreshTable(tableName);
         updateUiState(appState.READY);
-
-        // opcjonalnie: włączenie wizualnego sortowania nagłówka pozostaje domyślne
     }
 
     void showHelpDialog(){
@@ -417,8 +363,8 @@ public class MainWindow extends JFrame{
             public void actionPerformed(ActionEvent e) {
                 selectedTable[0] = (String) tableComboBox.getSelectedItem();
                 try {
-                    currentTable = selectedTable[0];
-                    refreshMainTable(currentTable); // przeladuj mainTable
+                    tableManager.refreshTable(selectedTable[0]);
+                    updateUiState(appState.READY);
                 } catch (SQLException ex) {
                     updateUiState(appState.NO_CONNECTION);
                     throw new RuntimeException(ex);
@@ -480,7 +426,7 @@ public class MainWindow extends JFrame{
                     userCRUD.insertUser(imie, nazwisko, nrTel, dataUrodzenia);
                     JOptionPane.showMessageDialog(MainWindow.this, "Dodano użytkownika do bazy!");
                     setStatusBar("Dodano użytkownika: " + imie + " " + nazwisko);
-                    refreshMainTable(currentTable);
+                    tableManager.refreshTable();
                 } catch (SQLException ex) {
                     JOptionPane.showMessageDialog(MainWindow.this,"BŁĄD! Nie dodano użytkownika!", "ERROR",JOptionPane.ERROR_MESSAGE);
                     setStatusBar("BŁĄD przy dodawaniu użytkownika!");
@@ -538,7 +484,7 @@ public class MainWindow extends JFrame{
                     userCRUD.updateUser(Integer.parseInt(id), pole, zmiana);
                     JOptionPane.showMessageDialog(MainWindow.this, "Edytowano użytkownika o polu id: " + id);
                     setStatusBar("Edytowano użytkownika o polu id: " + id);
-                    refreshMainTable(currentTable);
+                    tableManager.refreshTable();
                 } catch (SQLException ex) {
                     JOptionPane.showMessageDialog(MainWindow.this,"BŁĄD!!!", "ERROR",JOptionPane.ERROR_MESSAGE);
                     setStatusBar("BŁĄD przy edycji użytkownika o polu id: " + id);
@@ -590,7 +536,7 @@ public class MainWindow extends JFrame{
                     userCRUD.deleteUser(Integer.parseInt(id));
                     JOptionPane.showMessageDialog(MainWindow.this, "Usunięto użytkownika o polu id: " + id);
                     setStatusBar("Usunięto użytkownika o polu id: " + id);
-                    refreshMainTable(currentTable);
+                    tableManager.refreshTable();
                 } catch (SQLException ex) {
                     JOptionPane.showMessageDialog(MainWindow.this,"BŁĄD!!!", "ERROR",JOptionPane.ERROR_MESSAGE);
                     setStatusBar("BŁĄD przy usuwaniu użytkownika o polu id: " + id);
