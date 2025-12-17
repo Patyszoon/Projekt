@@ -163,7 +163,6 @@ public class DialogManager {
                     return;
                 }
 
-                // TODO: dodac sprawdzanie poprawnosci pol ^ wyzej
                 try {
                     userCRUD.insertUser(imie, nazwisko, nrTel, dataUrodzenia);
                     JOptionPane.showMessageDialog(parentFrame, "Dodano użytkownika do bazy!");
@@ -266,7 +265,6 @@ public class DialogManager {
                         break;
                 }
 
-                // TODO: dodac sprawdzanie poprawnosci pol ^ wyzej
                 try {
                     userCRUD.updateUser(Integer.parseInt(id), pole, zmiana);
                     JOptionPane.showMessageDialog(parentFrame, "Edytowano użytkownika o polu id: " + id);
@@ -336,7 +334,6 @@ public class DialogManager {
                     idField.requestFocus();
                     return;
                 }
-                // TODO: dodac sprawdzanie poprawnosci pol ^ wyzej
 
                 // SPRAWDZ, czy wybrano tak
                 if (result == JOptionPane.YES_OPTION) {

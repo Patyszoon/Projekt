@@ -20,7 +20,6 @@ public class Shortcuts {
         return mainWindow.getCurrentState() == MainWindow.appState.READY;
     }
     private void initShortcuts(JRootPane rootPane) {
-        // TODO: dodać skróty klawiszowe do akcji (w menu opis jaki skrót do czego)
         InputMap im = rootPane.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW);
         ActionMap am = rootPane.getActionMap();
 
