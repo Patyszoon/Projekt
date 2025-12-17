@@ -19,6 +19,7 @@ public class MainWindow extends JFrame{
     //  (jak jest NO_CONNECTION to po ruszaniu kursorem żeby nie znieniał się na "Gotowy")
 
     private TableManager tableManager;
+    private DialogManager dialogManager;
     private JTextPane infoPane;
 
     // przyciski
@@ -47,7 +48,7 @@ public class MainWindow extends JFrame{
         createMenu();
         updateUiState(appState.NO_CONNECTION);
         setVisible(true); // pokaz okno
-        new Shortcuts(this);
+        new Shortcuts(this, dialogManager);
     }
 
 
@@ -60,6 +61,12 @@ public class MainWindow extends JFrame{
         // status bar
         statusBarManager = new StatusBarManager();
         add(statusBarManager.getStatusBar(), BorderLayout.SOUTH);
+
+        // inicjalizacja TableManager
+        JTable mainTable = new JTable(); // zmienna lokalna
+        tableManager = new TableManager(mainTable, userCRUD);
+
+        dialogManager = new DialogManager(this, userCRUD, statusBarManager, tableManager);
 
        // menu główne
         add(createMainMenuPanel(), BorderLayout.CENTER);
@@ -81,10 +88,6 @@ public class MainWindow extends JFrame{
         infoPane.setText("Brak wybranej tabeli.\n" + "Wybierz tabelę z menu 'Plik -> Wybierz tabele' lub użyj skrótu Ctrl+S");
         panel.add(infoPane);
 
-        // inicjalizacja TableManager
-        JTable mainTable = new JTable(); // zmienna lokalna
-        tableManager = new TableManager(mainTable, userCRUD);
-
         JScrollPane tableScroll = new JScrollPane(tableManager.getTable());
         tableScroll.setPreferredSize(new Dimension(700, 300));
         panel.add(Box.createRigidArea(new Dimension(0, 15)));
@@ -95,16 +98,16 @@ public class MainWindow extends JFrame{
         editUserBtn = new JButton("Edytuj użytkownika");
         delUserBtn = new JButton("Usuń użytkownika");
 
-        newUserBtn.addActionListener(e -> showAddUserDialog());
+        newUserBtn.addActionListener(e -> dialogManager.showAddUserDialog());
         showUsersBtn.addActionListener(e -> {
             try {
-                showUsersDialog();
+                dialogManager.showUsersDialog();
             } catch (SQLException ex) {
                 throw new RuntimeException(ex);
             }
         });
-        editUserBtn.addActionListener(e -> showEditUserDialog());
-        delUserBtn.addActionListener(e -> showDelUserDialog());
+        editUserBtn.addActionListener(e -> dialogManager.showEditUserDialog());
+        delUserBtn.addActionListener(e -> dialogManager.showDelUserDialog());
 
         MouseAdapter mouseAdapter = new MouseAdapter() {
             @Override
@@ -201,14 +204,14 @@ public class MainWindow extends JFrame{
 
         newUserItem.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                showAddUserDialog();
+                dialogManager.showAddUserDialog();
             }
         });
 
         showUsersItem.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 try {
-                    showUsersDialog();
+                    dialogManager.showUsersDialog();
                 } catch (SQLException ex) {
                     throw new RuntimeException(ex);
                 }
@@ -217,19 +220,19 @@ public class MainWindow extends JFrame{
 
         editUserItem.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                showEditUserDialog();
+                dialogManager.showEditUserDialog();
             }
         });
 
         delUserItem.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                showDelUserDialog();
+                dialogManager.showDelUserDialog();
             }
         });
 
         selectTableItem.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                selectTableDialog();
+                dialogManager.selectTableDialog();
             }
         });
 
@@ -241,13 +244,13 @@ public class MainWindow extends JFrame{
 
         helpItem.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                showHelpDialog();
+                dialogManager.showHelpDialog();
             }
         });
 
         aboutItem.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                showAboutDialog();
+                dialogManager.showAboutDialog();
             }
         });
 
@@ -267,7 +270,7 @@ public class MainWindow extends JFrame{
         setJMenuBar(menuBar);
     }
 
-    private void updateUiState(appState newState) {
+    public void updateUiState(appState newState) {
         this.currentState = newState;
 
         boolean enabled = (newState == appState.READY);
@@ -314,404 +317,6 @@ public class MainWindow extends JFrame{
 
         tableManager.refreshTable(tableName);
         updateUiState(appState.READY);
-    }
-
-    void showHelpDialog(){
-        JOptionPane.showMessageDialog(MainWindow.this,
-                "Skróty klawiszowe:\n" +
-                        "Ctrl+N - Nowy użytkownik\n" +
-                        "Ctrl+P - Pokaż użytkowników\n" +
-                        "Ctrl+E - Edytuj użytkownika\n" +
-                        "Ctrl+D - Usuń użytkownika\n" +
-                        "Ctrl+S - Wybierz tabele\n" +
-                        "Ctrl+Q - Wyjście\n" +
-                        "F1 - Pomoc\n" +
-                        "F2 - O nas\n" +
-                        "F5 - Odśwież tabelę",
-                "Pomoc", JOptionPane.INFORMATION_MESSAGE);
-    }
-
-    void showAboutDialog(){
-        JOptionPane.showMessageDialog(MainWindow.this,
-                "Aplikacja do zarządzania użytkownikami.\n" +
-                        "Wersja 1.0\n" +
-                        "Autorzy: Patrycja Woźniak, Wiktoria Kowalczuk",
-                "O nas", JOptionPane.INFORMATION_MESSAGE);
-    }
-
-    String selectTableDialog(){
-        JDialog dialog = new JDialog(this, "Wybierz tabele",true);
-        dialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
-        dialog.setLocationRelativeTo(null);
-        dialog.setSize(300,200);
-        dialog.setResizable(false);
-
-        setStatusBar("Wybieranie tabeli...");
-
-        JPanel panel = new JPanel(new BorderLayout());
-        String[] tables = {"uzytkownik"}; // mozna dodac wiecej
-
-        JComboBox<String> tableComboBox = new JComboBox<>(tables);
-        panel.add(tableComboBox, BorderLayout.CENTER);
-
-        JButton selectButton = new JButton("Wybierz");
-        panel.add(selectButton, BorderLayout.SOUTH);
-
-        final String[] selectedTable = {null};
-
-        selectButton.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                selectedTable[0] = (String) tableComboBox.getSelectedItem();
-                try {
-                    tableManager.refreshTable(selectedTable[0]);
-                    updateUiState(appState.READY);
-                } catch (SQLException ex) {
-                    updateUiState(appState.NO_CONNECTION);
-                    throw new RuntimeException(ex);
-                }
-
-                JOptionPane.showMessageDialog(MainWindow.this,
-                        "Wybrano tabelę: " + selectedTable[0],
-                        "Informacja", JOptionPane.INFORMATION_MESSAGE);
-                setStatusBar("Wybrano tabelę: " + selectedTable[0]);
-
-                dialog.dispose();
-            }
-        });
-
-        dialog.add(panel);
-        dialog.setVisible(true);
-        return selectedTable[0];
-    }
-
-    void showAddUserDialog() {
-        JDialog dialog = new JDialog(this, "Dodaj użytkownika", true);
-        dialog.setLocationRelativeTo(null);
-        dialog.setSize(500, 400);
-        dialog.setResizable(false);
-        dialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
-        setStatusBar("Dodawanie użytkownika...");
-
-        JPanel addPanel = new JPanel(new GridLayout(4, 2, 10, 10)); // bez tego nie widac
-        addPanel.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
-        JTextField imieField = new JTextField();
-        JTextField nazwiskoField = new JTextField();
-        JTextField nrTelField = new JTextField();
-        JTextField dataUrField = new JTextField();
-
-        addPanel.add(new JLabel("Imię:"));
-        addPanel.add(imieField);
-        addPanel.add(new JLabel("Nazwisko:"));
-        addPanel.add(nazwiskoField);
-        addPanel.add(new JLabel("Nr telefonu:"));
-        addPanel.add(nrTelField);
-        addPanel.add(new JLabel("Data urodzenia:"));
-        addPanel.add(dataUrField);
-
-        JPanel buttonPanel = new JPanel();
-        JButton saveButton = new JButton("Zapisz");
-        JButton cancelButton = new JButton("Anuluj");
-        buttonPanel.add(saveButton);
-        buttonPanel.add(cancelButton);
-
-        saveButton.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                String imie = imieField.getText().trim();
-                String nazwisko = nazwiskoField.getText().trim();
-                String nrTel = nrTelField.getText().trim();
-                String dataUrodzenia = dataUrField.getText().trim();
-
-                // WALIDACJA
-                if (Validator.isEmpty(imie, nazwisko, nrTel, dataUrodzenia)) {
-                    JOptionPane.showMessageDialog(MainWindow.this,
-                            "Wszystkie pola muszą być wypełnione!", "Błąd", JOptionPane.ERROR_MESSAGE);
-                    return;
-                }
-
-                if (!Validator.isValidName(imie)) {
-                    JOptionPane.showMessageDialog(MainWindow.this,
-                            "Imię może zawierać tylko litery, spacje i myślniki!", "Błąd", JOptionPane.ERROR_MESSAGE);
-                    imieField.requestFocus();
-                    return;
-                }
-
-                if (!Validator.isValidName(nazwisko)) {
-                    JOptionPane.showMessageDialog(MainWindow.this,
-                            "Nazwisko może zawierać tylko litery, spacje i myślniki!", "Błąd", JOptionPane.ERROR_MESSAGE);
-                    nazwiskoField.requestFocus();
-                    return;
-                }
-
-                if (!Validator.isValidPhone(nrTel)) {
-                    JOptionPane.showMessageDialog(MainWindow.this,
-                            "Numer telefonu musi składać się z 9 cyfr!", "Błąd", JOptionPane.ERROR_MESSAGE);
-                    nrTelField.requestFocus();
-                    return;
-                }
-
-                if (!Validator.isValidDate(dataUrodzenia)) {
-                    JOptionPane.showMessageDialog(MainWindow.this,
-                            "Data musi być w formacie RRRR-MM-DD (np. 1990-01-15)!", "Błąd", JOptionPane.ERROR_MESSAGE);
-                    dataUrField.requestFocus();
-                    return;
-                }
-
-                // TODO: dodac sprawdzanie poprawnosci pol ^ wyzej
-                try {
-                    userCRUD.insertUser(imie, nazwisko, nrTel, dataUrodzenia);
-                    JOptionPane.showMessageDialog(MainWindow.this, "Dodano użytkownika do bazy!");
-                    setStatusBar("Dodano użytkownika: " + imie + " " + nazwisko);
-                    tableManager.refreshTable();
-                } catch (SQLException ex) {
-                    JOptionPane.showMessageDialog(MainWindow.this,"BŁĄD! Nie dodano użytkownika!", "ERROR",JOptionPane.ERROR_MESSAGE);
-                    setStatusBar("BŁĄD przy dodawaniu użytkownika!");
-                    throw new RuntimeException(ex);
-                }
-                dialog.dispose();
-            }
-        });
-        cancelButton.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                dialog.dispose();
-            }
-        });
-
-        dialog.add(addPanel, BorderLayout.CENTER);
-        dialog.add(buttonPanel, BorderLayout.SOUTH);
-        dialog.setVisible(true);
-    }
-    void showEditUserDialog() {
-        String poleSql[] = {"imie", "nazwisko", "nr_tel", "data_ur"};
-        JDialog dialog = new JDialog(this, "Edytuj użytkownika", true);
-        dialog.setLocationRelativeTo(null);
-        dialog.setSize(500, 400);
-        dialog.setResizable(false);
-        dialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
-        setStatusBar("Edycja użytkownika...");
-
-        JPanel addPanel = new JPanel(new GridLayout(4, 2, 10, 10)); // bez tego nie widac
-        addPanel.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
-        JTextField idField = new JTextField();
-        JComboBox poleField = new JComboBox(poleSql);
-        JTextField zmianaField = new JTextField();
-
-        addPanel.add(new JLabel("Id:"));
-        addPanel.add(idField);
-        addPanel.add(new JLabel("Pole:"));
-        addPanel.add(poleField);
-        addPanel.add(new JLabel("Zmiana:"));
-        addPanel.add(zmianaField);
-
-        JPanel buttonPanel = new JPanel();
-        JButton saveButton = new JButton("Zapisz");
-        JButton cancelButton = new JButton("Anuluj");
-        buttonPanel.add(saveButton);
-        buttonPanel.add(cancelButton);
-
-        saveButton.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                String id = idField.getText().trim();
-                String pole = poleField.getSelectedItem().toString().trim();
-                String zmiana = zmianaField.getText().trim();
-
-                // WALIDACJA
-                if (Validator.isEmpty(id, zmiana)) {
-                    JOptionPane.showMessageDialog(MainWindow.this,
-                            "ID i nowa wartość muszą być wypełnione!", "Błąd", JOptionPane.ERROR_MESSAGE);
-                    return;
-                }
-
-                if (!Validator.isPositiveInteger(id)) {
-                    JOptionPane.showMessageDialog(MainWindow.this,
-                            "ID musi być dodatnią liczbą całkowitą!", "Błąd", JOptionPane.ERROR_MESSAGE);
-                    idField.requestFocus();
-                    return;
-                }
-
-                // Walidacja w zaleznosci od poal
-                switch(pole) {
-                    case "imie":
-                    case "nazwisko":
-                        if (!Validator.isValidName(zmiana)) {
-                            JOptionPane.showMessageDialog(MainWindow.this,
-                                    pole + " może zawierać tylko litery, spacje i myślniki!", "Błąd", JOptionPane.ERROR_MESSAGE);
-                            zmianaField.requestFocus();
-                            return;
-                        }
-                        break;
-
-                    case "nr_tel":
-                        if (!Validator.isValidPhone(zmiana)) {
-                            JOptionPane.showMessageDialog(MainWindow.this,
-                                    "Numer telefonu musi składać się z 9 cyfr!", "Błąd", JOptionPane.ERROR_MESSAGE);
-                            zmianaField.requestFocus();
-                            return;
-                        }
-                        break;
-
-                    case "data_ur":
-                        if (!Validator.isValidDate(zmiana)) {
-                            JOptionPane.showMessageDialog(MainWindow.this,
-                                    "Data musi być w formacie RRRR-MM-DD!", "Błąd", JOptionPane.ERROR_MESSAGE);
-                            zmianaField.requestFocus();
-                            return;
-                        }
-                        break;
-                }
-
-                // TODO: dodac sprawdzanie poprawnosci pol ^ wyzej
-                try {
-                    userCRUD.updateUser(Integer.parseInt(id), pole, zmiana);
-                    JOptionPane.showMessageDialog(MainWindow.this, "Edytowano użytkownika o polu id: " + id);
-                    setStatusBar("Edytowano użytkownika o polu id: " + id);
-                    tableManager.refreshTable();
-                } catch (SQLException ex) {
-                    JOptionPane.showMessageDialog(MainWindow.this,"BŁĄD!!!", "ERROR",JOptionPane.ERROR_MESSAGE);
-                    setStatusBar("BŁĄD przy edycji użytkownika o polu id: " + id);
-                    throw new RuntimeException(ex);
-                }
-                dialog.dispose();
-            }
-        });
-        cancelButton.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                dialog.dispose();
-            }
-        });
-
-        dialog.add(addPanel, BorderLayout.CENTER);
-        dialog.add(buttonPanel, BorderLayout.SOUTH);
-        dialog.setVisible(true);
-    }
-    void showDelUserDialog() {
-        JDialog dialog = new JDialog(this, "Usuń użytkownika", true);
-        dialog.setLocationRelativeTo(null);
-        dialog.setSize(500, 400);
-        dialog.setResizable(false);
-        dialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
-        setStatusBar("Usuwanie użytkownika...");
-
-        JPanel addPanel = new JPanel(new GridLayout(4, 2, 10, 10)); // bez tego nie widac
-        addPanel.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
-        JTextField idField = new JTextField();
-
-        addPanel.add(new JLabel("Id:"));
-        addPanel.add(idField);
-
-        JPanel buttonPanel = new JPanel();
-        JButton delButton = new JButton("Usuń");
-        JButton cancelButton = new JButton("Anuluj");
-        buttonPanel.add(delButton);
-        buttonPanel.add(cancelButton);
-
-        delButton.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                String id = idField.getText().trim();
-                int result = JOptionPane.showConfirmDialog(
-                        MainWindow.this,
-                        "Czy na pewno chcesz usunąć użytkownika o ID " + id + "?\n" +
-                                "Tej akcji nie można cofnąć.",
-                        "Potwierdź usunięcie",
-                        JOptionPane.YES_NO_OPTION,
-                        JOptionPane.WARNING_MESSAGE
-                );
-
-                // WALIDACJA
-                if (Validator.isEmpty(id)) {
-                    JOptionPane.showMessageDialog(MainWindow.this,
-                            "Musisz podać ID użytkownika!", "Błąd", JOptionPane.ERROR_MESSAGE);
-                    return;
-                }
-
-                if (!Validator.isPositiveInteger(id)) {
-                    JOptionPane.showMessageDialog(MainWindow.this,
-                            "ID musi być dodatnią liczbą całkowitą!", "Błąd", JOptionPane.ERROR_MESSAGE);
-                    idField.requestFocus();
-                    return;
-                }
-                // TODO: dodac sprawdzanie poprawnosci pol ^ wyzej
-
-                // SPRAWDZ, czy wybrano tak
-                if (result == JOptionPane.YES_OPTION) {
-                    try {
-                        userCRUD.deleteUser(Integer.parseInt(id));
-                        JOptionPane.showMessageDialog(MainWindow.this, "Usunięto użytkownika o polu id: " + id);
-                        setStatusBar("Usunięto użytkownika o polu id: " + id);
-                        tableManager.refreshTable();
-                    } catch (SQLException ex) {
-                        JOptionPane.showMessageDialog(MainWindow.this,"BŁĄD!!!", "ERROR",JOptionPane.ERROR_MESSAGE);
-                        setStatusBar("BŁĄD przy usuwaniu użytkownika o polu id: " + id);
-                        throw new RuntimeException(ex);
-                    }
-                }else {
-                    // wybrano nie
-                    setStatusBar("Anulowano usuwanie użytkownika o ID: " + id);
-                }
-                dialog.dispose();
-            }
-        });
-        cancelButton.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                dialog.dispose();
-            }
-        });
-
-        dialog.add(addPanel, BorderLayout.CENTER);
-        dialog.add(buttonPanel, BorderLayout.SOUTH);
-        dialog.setVisible(true);
-    }
-    void showUsersDialog() throws SQLException {
-        // TODO: zmiana pasku stanu przy zaznaczeniu filtru w tabeli (filtr uaktywnia sie po kliknieciu w nazwe kolumny)
-
-        JDialog dialog = new JDialog(this, "Pokaż użytkownika", false);
-        dialog.setLocationRelativeTo(null);
-        dialog.setSize(500, 400);
-        dialog.setResizable(false);
-        dialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
-        setStatusBar("Wyświetlanie użytkowników...");
-
-        List<Object[]> users = userCRUD.getUsers();
-        String[] columnNames = {"ID", "Imię", "Nazwisko", "Nr_tel", "Data_ur"};
-
-        Object[][] tableData = new Object[users.size()][];
-        for (int i = 0; i < users.size(); i++) {
-            tableData[i] = users.get(i);
-        };
-
-        DefaultTableModel model = new DefaultTableModel(tableData, columnNames) {
-            @Override
-            public boolean isCellEditable(int row, int column) {
-                return false; //brak możliwości edycji komórek
-            }
-        };
-
-        JTable table = new JTable(tableData, columnNames);
-        table.setEditingColumn(0);
-        table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-        table.setModel(model);
-
-        javax.swing.table.TableRowSorter<DefaultTableModel> sorter = new javax.swing.table.TableRowSorter<>(model);
-
-        java.util.Comparator<Object> idComparator = (o1, o2) -> {
-            try {
-                if (o1 instanceof Number && o2 instanceof Number) {
-                    return Integer.compare(((Number)o1).intValue(), ((Number)o2).intValue());
-                }
-                int i1 = Integer.parseInt(o1.toString());
-                int i2 = Integer.parseInt(o2.toString());
-                return Integer.compare(i1, i2);
-            } catch (Exception ex) {
-                return o1.toString().compareTo(o2.toString());
-            }
-        };
-
-        sorter.setComparator(0, idComparator);
-        table.setRowSorter(sorter);
-
-        JScrollPane scrollPane = new JScrollPane(table);
-        dialog.getContentPane().add(scrollPane);
-        dialog.pack();
-        dialog.setVisible(true);
     }
 
     public void setStatusBar(String message) {

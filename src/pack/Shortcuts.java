@@ -8,9 +8,11 @@ import java.sql.SQLException;
 
 public class Shortcuts {
     private final MainWindow mainWindow;
+    private DialogManager dialogManager;
 
-    public Shortcuts(MainWindow mainWindow) {
+    public Shortcuts(MainWindow mainWindow, DialogManager dialogManager) {
         this.mainWindow = mainWindow;
+        this.dialogManager = dialogManager;
         initShortcuts(mainWindow.getRootPane());
     }
 
@@ -27,7 +29,7 @@ public class Shortcuts {
         am.put("select", new AbstractAction() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                mainWindow.selectTableDialog();
+                dialogManager.selectTableDialog();
             }
         });
         // Ctrl+N to new user
@@ -36,7 +38,7 @@ public class Shortcuts {
             @Override
             public void actionPerformed(ActionEvent e) {
                 if(!isReady()) return;
-                mainWindow.showAddUserDialog();
+                dialogManager.showAddUserDialog();
             }
         });
         // Ctrl+E to edit user
@@ -45,7 +47,7 @@ public class Shortcuts {
             @Override
             public void actionPerformed(ActionEvent e) {
                 if(!isReady()) return;
-                mainWindow.showEditUserDialog();
+                dialogManager.showEditUserDialog();
             }
         });
         // Ctrl+D to delete user
@@ -54,7 +56,7 @@ public class Shortcuts {
             @Override
             public void actionPerformed(ActionEvent e) {
                 if(!isReady()) return;
-                mainWindow.showDelUserDialog();
+                dialogManager.showDelUserDialog();
             }
         });
         // Ctrl+P to show users
@@ -64,7 +66,7 @@ public class Shortcuts {
             public void actionPerformed(ActionEvent e) {
             if(!isReady()) return;
                 try {
-                    mainWindow.showUsersDialog();
+                    dialogManager.showUsersDialog();
                 } catch (SQLException ex) {
                     throw new RuntimeException(ex);
                 }
@@ -83,7 +85,7 @@ public class Shortcuts {
         am.put("help", new AbstractAction() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                mainWindow.showHelpDialog();
+                dialogManager.showHelpDialog();
             }
         });
         // F2 for about
@@ -91,7 +93,7 @@ public class Shortcuts {
         am.put("about", new AbstractAction() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                mainWindow.showAboutDialog();
+                dialogManager.showAboutDialog();
             }
         });
         // F5 to refresh
