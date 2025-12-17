@@ -416,12 +416,47 @@ public class MainWindow extends JFrame{
 
         saveButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                String imie = imieField.getText();
-                String nazwisko = nazwiskoField.getText();
-                String nrTel = nrTelField.getText();
-                String dataUrodzenia = dataUrField.getText();
+                String imie = imieField.getText().trim();
+                String nazwisko = nazwiskoField.getText().trim();
+                String nrTel = nrTelField.getText().trim();
+                String dataUrodzenia = dataUrField.getText().trim();
 
-                // TODO: dodac sprawdzanie poprawnosci pol + refresh tabeli
+                // WALIDACJA
+                if (Validator.isEmpty(imie, nazwisko, nrTel, dataUrodzenia)) {
+                    JOptionPane.showMessageDialog(MainWindow.this,
+                            "Wszystkie pola muszą być wypełnione!", "Błąd", JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
+
+                if (!Validator.isValidName(imie)) {
+                    JOptionPane.showMessageDialog(MainWindow.this,
+                            "Imię może zawierać tylko litery, spacje i myślniki!", "Błąd", JOptionPane.ERROR_MESSAGE);
+                    imieField.requestFocus();
+                    return;
+                }
+
+                if (!Validator.isValidName(nazwisko)) {
+                    JOptionPane.showMessageDialog(MainWindow.this,
+                            "Nazwisko może zawierać tylko litery, spacje i myślniki!", "Błąd", JOptionPane.ERROR_MESSAGE);
+                    nazwiskoField.requestFocus();
+                    return;
+                }
+
+                if (!Validator.isValidPhone(nrTel)) {
+                    JOptionPane.showMessageDialog(MainWindow.this,
+                            "Numer telefonu musi składać się z 9 cyfr!", "Błąd", JOptionPane.ERROR_MESSAGE);
+                    nrTelField.requestFocus();
+                    return;
+                }
+
+                if (!Validator.isValidDate(dataUrodzenia)) {
+                    JOptionPane.showMessageDialog(MainWindow.this,
+                            "Data musi być w formacie RRRR-MM-DD (np. 1990-01-15)!", "Błąd", JOptionPane.ERROR_MESSAGE);
+                    dataUrField.requestFocus();
+                    return;
+                }
+
+                // TODO: dodac sprawdzanie poprawnosci pol ^ wyzej
                 try {
                     userCRUD.insertUser(imie, nazwisko, nrTel, dataUrodzenia);
                     JOptionPane.showMessageDialog(MainWindow.this, "Dodano użytkownika do bazy!");
@@ -475,11 +510,56 @@ public class MainWindow extends JFrame{
 
         saveButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                String id = idField.getText();
-                String pole = poleField.getSelectedItem().toString();
-                String zmiana = zmianaField.getText();
+                String id = idField.getText().trim();
+                String pole = poleField.getSelectedItem().toString().trim();
+                String zmiana = zmianaField.getText().trim();
 
-                // TODO: dodac sprawdzanie poprawnosci pol + refresh tabeli
+                // WALIDACJA
+                if (Validator.isEmpty(id, zmiana)) {
+                    JOptionPane.showMessageDialog(MainWindow.this,
+                            "ID i nowa wartość muszą być wypełnione!", "Błąd", JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
+
+                if (!Validator.isPositiveInteger(id)) {
+                    JOptionPane.showMessageDialog(MainWindow.this,
+                            "ID musi być dodatnią liczbą całkowitą!", "Błąd", JOptionPane.ERROR_MESSAGE);
+                    idField.requestFocus();
+                    return;
+                }
+
+                // Walidacja w zaleznosci od poal
+                switch(pole) {
+                    case "imie":
+                    case "nazwisko":
+                        if (!Validator.isValidName(zmiana)) {
+                            JOptionPane.showMessageDialog(MainWindow.this,
+                                    pole + " może zawierać tylko litery, spacje i myślniki!", "Błąd", JOptionPane.ERROR_MESSAGE);
+                            zmianaField.requestFocus();
+                            return;
+                        }
+                        break;
+
+                    case "nr_tel":
+                        if (!Validator.isValidPhone(zmiana)) {
+                            JOptionPane.showMessageDialog(MainWindow.this,
+                                    "Numer telefonu musi składać się z 9 cyfr!", "Błąd", JOptionPane.ERROR_MESSAGE);
+                            zmianaField.requestFocus();
+                            return;
+                        }
+                        break;
+
+                    case "data_ur":
+                        if (!Validator.isValidDate(zmiana)) {
+                            JOptionPane.showMessageDialog(MainWindow.this,
+                                    "Data musi być w formacie RRRR-MM-DD!", "Błąd", JOptionPane.ERROR_MESSAGE);
+                            zmianaField.requestFocus();
+                            return;
+                        }
+                        break;
+                }
+
+                // TODO: dodac sprawdzanie poprawnosci pol ^ wyzej
                 try {
                     userCRUD.updateUser(Integer.parseInt(id), pole, zmiana);
                     JOptionPane.showMessageDialog(MainWindow.this, "Edytowano użytkownika o polu id: " + id);
@@ -526,21 +606,46 @@ public class MainWindow extends JFrame{
 
         delButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                String id = idField.getText();
-                JOptionPane.showConfirmDialog( MainWindow.this,
-                        "Czy napewno chcesz usunąć użytkownika?.\n"
-                                + "Tej akcji nie można cofnąć.", "Potwierdź",
-                        JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
-                // TODO: dodac sprawdzanie poprawnosci pol + refresh tabeli
-                try {
-                    userCRUD.deleteUser(Integer.parseInt(id));
-                    JOptionPane.showMessageDialog(MainWindow.this, "Usunięto użytkownika o polu id: " + id);
-                    setStatusBar("Usunięto użytkownika o polu id: " + id);
-                    tableManager.refreshTable();
-                } catch (SQLException ex) {
-                    JOptionPane.showMessageDialog(MainWindow.this,"BŁĄD!!!", "ERROR",JOptionPane.ERROR_MESSAGE);
-                    setStatusBar("BŁĄD przy usuwaniu użytkownika o polu id: " + id);
-                    throw new RuntimeException(ex);
+                String id = idField.getText().trim();
+                int result = JOptionPane.showConfirmDialog(
+                        MainWindow.this,
+                        "Czy na pewno chcesz usunąć użytkownika o ID " + id + "?\n" +
+                                "Tej akcji nie można cofnąć.",
+                        "Potwierdź usunięcie",
+                        JOptionPane.YES_NO_OPTION,
+                        JOptionPane.WARNING_MESSAGE
+                );
+
+                // WALIDACJA
+                if (Validator.isEmpty(id)) {
+                    JOptionPane.showMessageDialog(MainWindow.this,
+                            "Musisz podać ID użytkownika!", "Błąd", JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
+
+                if (!Validator.isPositiveInteger(id)) {
+                    JOptionPane.showMessageDialog(MainWindow.this,
+                            "ID musi być dodatnią liczbą całkowitą!", "Błąd", JOptionPane.ERROR_MESSAGE);
+                    idField.requestFocus();
+                    return;
+                }
+                // TODO: dodac sprawdzanie poprawnosci pol ^ wyzej
+
+                // SPRAWDZ, czy wybrano tak
+                if (result == JOptionPane.YES_OPTION) {
+                    try {
+                        userCRUD.deleteUser(Integer.parseInt(id));
+                        JOptionPane.showMessageDialog(MainWindow.this, "Usunięto użytkownika o polu id: " + id);
+                        setStatusBar("Usunięto użytkownika o polu id: " + id);
+                        tableManager.refreshTable();
+                    } catch (SQLException ex) {
+                        JOptionPane.showMessageDialog(MainWindow.this,"BŁĄD!!!", "ERROR",JOptionPane.ERROR_MESSAGE);
+                        setStatusBar("BŁĄD przy usuwaniu użytkownika o polu id: " + id);
+                        throw new RuntimeException(ex);
+                    }
+                }else {
+                    // wybrano nie
+                    setStatusBar("Anulowano usuwanie użytkownika o ID: " + id);
                 }
                 dialog.dispose();
             }
