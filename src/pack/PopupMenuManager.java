@@ -11,9 +11,9 @@ public class PopupMenuManager {
     private DialogManager dialogManager;
 
     // elementy menu kontekstowego
-    private JMenuItem editUserItem;
-    private JMenuItem delUserItem;
-    private JMenuItem copyIdItem;
+    private JMenuItem editItem;
+    private JMenuItem delItem;
+    private JMenuItem addItem;
 
     public PopupMenuManager(MainWindow mainWindow, DialogManager dialogManager) {
         this.mainWindow = mainWindow;
@@ -25,16 +25,15 @@ public class PopupMenuManager {
     }
 
     public void createPopupMenu(){
-        editUserItem = new JMenuItem("Edytuj");
-        delUserItem = new JMenuItem("Usuń");
-        //copyIdItem = new JMenuItem("Kopiuj ID");
+        editItem = new JMenuItem("Edytuj rekord");
+        delItem = new JMenuItem("Usuń rekod");
+        addItem = new JMenuItem(("Dodaj rekord"));
 
-        popupMenu.add(editUserItem);
-        popupMenu.add(delUserItem);
-        //popupMenu.addSeparator();
-        //popupMenu.add(copyIdItem);
+        popupMenu.add(editItem);
+        popupMenu.add(delItem);
+        popupMenu.add(addItem);
 
-        editUserItem.addActionListener(new ActionListener() {
+        editItem.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 int id = getSelectedUserId();
@@ -43,11 +42,18 @@ public class PopupMenuManager {
             }
         });
 
-        delUserItem.addActionListener(new ActionListener() {
+        delItem.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 int id = getSelectedUserId();
                 if (id > 0) { dialogManager.showDelUserDialog(id); }
+            }
+        });
+
+        addItem.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                dialogManager.showAddUserDialog();
             }
         });
     }
