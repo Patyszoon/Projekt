@@ -70,6 +70,7 @@ public class MainWindow extends JFrame{
 
         popupMenuManager = new PopupMenuManager(this, dialogManager);
         mainTable.setComponentPopupMenu(popupMenuManager.getPopupMenu());
+
         // menu główne
         add(createMainMenuPanel(), BorderLayout.CENTER);
 

@@ -25,8 +25,8 @@ public class PopupMenuManager {
     }
 
     public void createPopupMenu(){
-        editUserItem = new JMenuItem("Edytuj użytkownika");
-        delUserItem = new JMenuItem("Usuń użytkownika");
+        editUserItem = new JMenuItem("Edytuj");
+        delUserItem = new JMenuItem("Usuń");
         //copyIdItem = new JMenuItem("Kopiuj ID");
 
         popupMenu.add(editUserItem);

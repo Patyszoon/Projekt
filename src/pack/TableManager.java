@@ -80,13 +80,6 @@ public class TableManager {
                 return false;
             }
 
-//            @Override
-//            public Class<?> getColumnClass(int column) {
-//                // Lepsze sortowanie ?
-//                if (column == 0 || column == 3) return Integer.class;
-//                if (column == 4) return java.sql.Date.class;
-//                return String.class;
-//            }
         };
 
         table.setModel(model);
