@@ -20,6 +20,7 @@ public class MainWindow extends JFrame{
 
     private TableManager tableManager;
     private DialogManager dialogManager;
+    private PopupMenuManager popupMenuManager;
     private JTextPane infoPane;
 
     // przyciski
@@ -51,7 +52,6 @@ public class MainWindow extends JFrame{
         new Shortcuts(this, dialogManager);
     }
 
-
     private void setupWindow() throws SQLException{ //rzeczy w srdoku okna
         setTitle("Aplikacja do zarządzania bazą danych"); // tytuł okna
         setSize(750, 650);
@@ -68,7 +68,9 @@ public class MainWindow extends JFrame{
 
         dialogManager = new DialogManager(this, userCRUD, statusBarManager, tableManager);
 
-       // menu główne
+        popupMenuManager = new PopupMenuManager(this, dialogManager);
+        mainTable.setComponentPopupMenu(popupMenuManager.getPopupMenu());
+        // menu główne
         add(createMainMenuPanel(), BorderLayout.CENTER);
 
     }
@@ -321,5 +323,37 @@ public class MainWindow extends JFrame{
 
     public void setStatusBar(String message) {
         statusBarManager.setStatus(message);
+    }
+
+    public TableManager getTableManager() {
+        return tableManager;
+    }
+
+    public DialogManager getDialogManager() {
+        return dialogManager;
+    }
+
+    public JTextPane getInfoPane() {
+        return infoPane;
+    }
+
+    public StatusBarManager getStatusBarManager() {
+        return statusBarManager;
+    }
+
+    public void setUserCRUD(UserCRUD userCRUD) {
+        this.userCRUD = userCRUD;
+    }
+
+    public void setStatusBarManager(StatusBarManager statusBarManager) {
+        this.statusBarManager = statusBarManager;
+    }
+
+    public void setTableManager(TableManager tableManager) {
+        this.tableManager = tableManager;
+    }
+
+    public void setDialogManager(DialogManager dialogManager) {
+        this.dialogManager = dialogManager;
     }
 }

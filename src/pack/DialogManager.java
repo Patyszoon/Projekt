@@ -186,7 +186,7 @@ public class DialogManager {
         dialog.add(buttonPanel, BorderLayout.SOUTH);
         dialog.setVisible(true);
     }
-    void showEditUserDialog() {
+    void showEditUserDialog(int prefilledId) {
         String poleSql[] = {"imie", "nazwisko", "nr_tel", "data_ur"};
         JDialog dialog = new JDialog(parentFrame, "Edytuj użytkownika", true);
         dialog.setLocationRelativeTo(null);
@@ -201,6 +201,10 @@ public class DialogManager {
         JComboBox poleField = new JComboBox(poleSql);
         JTextField zmianaField = new JTextField();
 
+        if (prefilledId > 0) {
+            idField.setText(String.valueOf(prefilledId));
+            idField.setEditable(false); // edycja zablokowana
+        }
         addPanel.add(new JLabel("Id:"));
         addPanel.add(idField);
         addPanel.add(new JLabel("Pole:"));
@@ -288,7 +292,11 @@ public class DialogManager {
         dialog.add(buttonPanel, BorderLayout.SOUTH);
         dialog.setVisible(true);
     }
-    void showDelUserDialog() {
+
+    void showEditUserDialog() {
+        showEditUserDialog(0);
+    }
+    void showDelUserDialog(int prefilledId) {
         JDialog dialog = new JDialog(parentFrame, "Usuń użytkownika", true);
         dialog.setLocationRelativeTo(null);
         dialog.setSize(500, 400);
@@ -299,6 +307,11 @@ public class DialogManager {
         JPanel addPanel = new JPanel(new GridLayout(4, 2, 10, 10)); // bez tego nie widac
         addPanel.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
         JTextField idField = new JTextField();
+
+        if (prefilledId > 0) {
+            idField.setText(String.valueOf(prefilledId));
+            idField.setEditable(false); // edycja zablokowana
+        }
 
         addPanel.add(new JLabel("Id:"));
         addPanel.add(idField);
@@ -363,6 +376,9 @@ public class DialogManager {
         dialog.add(addPanel, BorderLayout.CENTER);
         dialog.add(buttonPanel, BorderLayout.SOUTH);
         dialog.setVisible(true);
+    }
+    void showDelUserDialog(){
+        showDelUserDialog(0);
     }
     void showUsersDialog() throws SQLException {
         // TODO: zmiana pasku stanu przy zaznaczeniu filtru w tabeli (filtr uaktywnia sie po kliknieciu w nazwe kolumny)
