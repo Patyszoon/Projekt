@@ -20,7 +20,6 @@ public class DialogManager {
         this.userCRUD = userCRUD;
         this.statusBarManager = statusBarManager;
         this.tableManager = tableManager;
-
     }
 
     void showHelpDialog(){
@@ -70,22 +69,20 @@ public class DialogManager {
             public void actionPerformed(ActionEvent e) {
                 selectedTable[0] = (String) tableComboBox.getSelectedItem();
                 try {
-                    tableManager.refreshTable(selectedTable[0]);
-                    parentFrame.updateUiState(MainWindow.appState.READY);
+                    // odśwież główną tabelę
+                    parentFrame.refreshMainTable(selectedTable[0]);
+
+                    JOptionPane.showMessageDialog(parentFrame,
+                            "Wybrano tabelę: " + selectedTable[0],
+                            "Informacja", JOptionPane.INFORMATION_MESSAGE);
+                    setStatusBar("Wybrano tabelę: " + selectedTable[0]);
                 } catch (SQLException ex) {
                     parentFrame.updateUiState(MainWindow.appState.NO_CONNECTION);
                     throw new RuntimeException(ex);
                 }
-
-                JOptionPane.showMessageDialog(parentFrame,
-                        "Wybrano tabelę: " + selectedTable[0],
-                        "Informacja", JOptionPane.INFORMATION_MESSAGE);
-                setStatusBar("Wybrano tabelę: " + selectedTable[0]);
-
                 dialog.dispose();
             }
         });
-
         dialog.add(panel);
         dialog.setVisible(true);
         return selectedTable[0];
@@ -381,8 +378,6 @@ public class DialogManager {
         showDelUserDialog(0);
     }
     void showUsersDialog() throws SQLException {
-        // TODO: zmiana pasku stanu przy zaznaczeniu filtru w tabeli (filtr uaktywnia sie po kliknieciu w nazwe kolumny)
-
         JDialog dialog = new JDialog(parentFrame, "Pokaż użytkownika", false);
         dialog.setLocationRelativeTo(null);
         dialog.setSize(500, 400);
@@ -405,10 +400,8 @@ public class DialogManager {
             }
         };
 
-        JTable table = new JTable(tableData, columnNames);
-        table.setEditingColumn(0);
+        JTable table = new JTable(model);
         table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-        table.setModel(model);
 
         javax.swing.table.TableRowSorter<DefaultTableModel> sorter = new javax.swing.table.TableRowSorter<>(model);
 
@@ -427,6 +420,30 @@ public class DialogManager {
 
         sorter.setComparator(0, idComparator);
         table.setRowSorter(sorter);
+
+        sorter.addRowSorterListener(e -> {
+            if (e.getType() != javax.swing.event.RowSorterEvent.Type.SORT_ORDER_CHANGED) {return;}
+
+            java.util.List<? extends javax.swing.RowSorter.SortKey> sortKeys = sorter.getSortKeys();
+            if (sortKeys == null || sortKeys.isEmpty()) {
+                setStatusBar("Sortowanie wyłączone");
+                return;
+            }
+
+            javax.swing.RowSorter.SortKey key = sortKeys.get(0);
+            int columnIndex = key.getColumn();
+            javax.swing.SortOrder order = key.getSortOrder();
+
+            String columnName = table.getColumnName(columnIndex);
+            String direction;
+            if (order == javax.swing.SortOrder.ASCENDING) {direction = "rosnąco";}
+            else if (order == javax.swing.SortOrder.DESCENDING) {direction = "malejąco";}
+            else {
+                setStatusBar("Sortowanie wyłączone");
+                return;
+            }
+            setStatusBar("Sortowanie po kolumnie: \"" + columnName + "\" (" + direction + ")");
+        });
 
         JScrollPane scrollPane = new JScrollPane(table);
         dialog.getContentPane().add(scrollPane);

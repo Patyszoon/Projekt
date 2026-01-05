@@ -52,10 +52,6 @@ public class StatusBarManager {
         setStatus(message, 0); // bez timera
     }
 
-    public void enableAutoReset() {this.allowAutoReset = true;}
-
-    public void disableAutoReset() {this.allowAutoReset = false;}
-
     public void addMouseListener(java.awt.event.MouseListener listener) {
         statusBar.addMouseListener(listener);
     }

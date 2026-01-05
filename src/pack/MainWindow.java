@@ -1,6 +1,7 @@
 package pack;
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.table.TableRowSorter;
 import java.awt.*;
 import java.awt.event.*;
 import java.sql.SQLException;
@@ -20,6 +21,9 @@ public class MainWindow extends JFrame{
     private DialogManager dialogManager;
     private PopupMenuManager popupMenuManager;
     private JTextPane infoPane;
+
+    private JTextField filterField;
+    private TableRowSorter<DefaultTableModel> rowSorter;
 
     // przyciski
     private JButton newUserBtn;
@@ -64,6 +68,12 @@ public class MainWindow extends JFrame{
         JTable mainTable = new JTable(); // zmienna lokalna
         tableManager = new TableManager(mainTable, userCRUD);
 
+        DefaultTableModel model = (DefaultTableModel) tableManager.getTable().getModel();
+        rowSorter = new TableRowSorter<>(model);
+        tableManager.getTable().setRowSorter(rowSorter);
+
+        mainTableSortListener();
+
         dialogManager = new DialogManager(this, userCRUD, statusBarManager, tableManager);
 
         popupMenuManager = new PopupMenuManager(this, dialogManager);
@@ -83,10 +93,40 @@ public class MainWindow extends JFrame{
         infoPane.setOpaque(false);
         infoPane.setBackground(new Color(0,0,0,0));
         infoPane.setFont(new Font("Monospaced", Font.PLAIN, 12));
-        infoPane.setCaret(null);
+        infoPane.setFocusable(false);
         infoPane.setPreferredSize(new Dimension(200, 100));
         infoPane.setText("Brak wybranej tabeli.\n" + "Wybierz tabelę z menu 'Plik -> Wybierz tabele' lub użyj skrótu Ctrl+S");
         panel.add(infoPane);
+
+        // panel wyszukiwania rekordów
+        JPanel filterPanel = new JPanel(new BorderLayout(5, 5));
+        JLabel filterLabel = new JLabel("Szukaj:");
+        filterField = new JTextField();
+        filterPanel.add(filterLabel, BorderLayout.WEST);
+        filterPanel.add(filterField, BorderLayout.CENTER);
+        filterPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, filterField.getPreferredSize().height));
+        panel.add(filterPanel);
+        panel.add(Box.createRigidArea(new Dimension(0, 5)));
+
+        // reakcja na zmianę tekstu w szukaj
+        filterField.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
+            private void updateFilter() {
+                if (rowSorter == null) return;
+                String text = filterField.getText();
+                if (text == null || text.isBlank()) {
+                    rowSorter.setRowFilter(null);
+                    statusBarManager.setStatus("Pasek szukaj");
+                } else {
+                    rowSorter.setRowFilter(
+                            RowFilter.regexFilter("(?i)" + java.util.regex.Pattern.quote(text))
+                    );
+                    statusBarManager.setStatus("Szukaj w tabeli: \"" + text + "\"");
+                }
+            }
+            @Override public void insertUpdate(javax.swing.event.DocumentEvent e) { updateFilter(); }
+            @Override public void removeUpdate(javax.swing.event.DocumentEvent e) { updateFilter(); }
+            @Override public void changedUpdate(javax.swing.event.DocumentEvent e) { updateFilter(); }
+        });
 
         JScrollPane tableScroll = new JScrollPane(tableManager.getTable());
         tableScroll.setPreferredSize(new Dimension(700, 300));
@@ -272,7 +312,6 @@ public class MainWindow extends JFrame{
 
     // pasek stanu
     private void restoreStatusForCurrentState() {
-        statusBarManager.disableAutoReset();
         switch (currentState) {
             case READY:
                 statusBarManager.setStatusPermanent("Gotowy");
@@ -314,14 +353,63 @@ public class MainWindow extends JFrame{
         restoreStatusForCurrentState();
     }
 
-    private void refreshMainTable(String tableName) throws SQLException {
+    public void refreshMainTable(String tableName) throws SQLException {
         if (tableName == null) {
             updateUiState(appState.NO_CONNECTION);
             return;
         }
-
         tableManager.refreshTable(tableName);
+
+        DefaultTableModel model = (DefaultTableModel) tableManager.getTable().getModel();
+        rowSorter = new TableRowSorter<>(model);
+        tableManager.getTable().setRowSorter(rowSorter);
+
+        mainTableSortListener();
+
+        if (filterField != null) {
+            String text = filterField.getText();
+            if (text == null || text.isBlank()) {
+                rowSorter.setRowFilter(null);
+            } else {
+                rowSorter.setRowFilter(
+                        RowFilter.regexFilter("(?i)" + java.util.regex.Pattern.quote(text))
+                );
+            }
+        }
         updateUiState(appState.READY);
+    }
+
+    private void mainTableSortListener() {
+        if (rowSorter == null) return;
+
+        rowSorter.addRowSorterListener(e -> {
+            if (e.getType() != javax.swing.event.RowSorterEvent.Type.SORT_ORDER_CHANGED) {
+                return;
+            }
+
+            java.util.List<? extends javax.swing.RowSorter.SortKey> sortKeys = rowSorter.getSortKeys();
+            if (sortKeys == null || sortKeys.isEmpty()) {
+                statusBarManager.setStatus("Sortowanie wyłączone");
+                return;
+            }
+
+            javax.swing.RowSorter.SortKey key = sortKeys.get(0);
+            int columnIndex = key.getColumn();
+            javax.swing.SortOrder order = key.getSortOrder();
+
+            JTable table = tableManager.getTable();
+            String columnName = table.getColumnName(columnIndex);
+
+            String direction;
+            if (order == javax.swing.SortOrder.ASCENDING) {direction = "rosnąco";}
+            else if (order == javax.swing.SortOrder.DESCENDING) {direction = "malejąco";}
+            else {
+                statusBarManager.setStatus("Sortowanie wyłączone");
+                return;
+            }
+
+            statusBarManager.setStatus("Sortowanie po kolumnie: \"" + columnName + "\" (" + direction + ")");
+        });
     }
 
     public void setStatusBar(String message) {
