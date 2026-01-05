@@ -15,8 +15,6 @@ public class MainWindow extends JFrame{
     private appState currentState = appState.READY;
     private UserCRUD userCRUD;
     private StatusBarManager statusBarManager;
-    // TODO: zmiana statusu aplikacji (NO_CONNECTION, READY itp) i dostosowanie UI do tego
-    //  (jak jest NO_CONNECTION to po ruszaniu kursorem żeby nie znieniał się na "Gotowy")
 
     private TableManager tableManager;
     private DialogManager dialogManager;
