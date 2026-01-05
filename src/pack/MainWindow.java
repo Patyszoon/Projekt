@@ -73,7 +73,6 @@ public class MainWindow extends JFrame{
 
         // menu główne
         add(createMainMenuPanel(), BorderLayout.CENTER);
-
     }
 
     private JPanel createMainMenuPanel() throws SQLException {
@@ -123,7 +122,7 @@ public class MainWindow extends JFrame{
             }
             @Override
             public void mouseExited(MouseEvent e) {
-                statusBarManager.setStatus("Gotowy");
+                restoreStatusForCurrentState();
             }
         };
 
@@ -189,7 +188,7 @@ public class MainWindow extends JFrame{
             }
             @Override
             public void mouseExited(MouseEvent e) {
-                statusBarManager.setStatusPermanent("Gotowy");
+                restoreStatusForCurrentState();
             }
         };
 
@@ -273,6 +272,19 @@ public class MainWindow extends JFrame{
         setJMenuBar(menuBar);
     }
 
+    // pasek stanu
+    private void restoreStatusForCurrentState() {
+        statusBarManager.disableAutoReset();
+        switch (currentState) {
+            case READY:
+                statusBarManager.setStatusPermanent("Gotowy");
+                break;
+            case NO_CONNECTION:
+                statusBarManager.setStatusPermanent("Brak połączenia z bazą. Proszę wybrać tabelę z menu.");
+                break;
+        }
+    }
+
     public void updateUiState(appState newState) {
         this.currentState = newState;
 
@@ -301,15 +313,7 @@ public class MainWindow extends JFrame{
                     break;
             }
         }
-        // pasek stanu
-        switch (newState) {
-            case READY:
-                statusBarManager.setStatusPermanent("Gotowy");
-                break;
-            case NO_CONNECTION:
-                statusBarManager.setStatusPermanent("Brak połączenia z bazą. Proszę wybrać tabelę z menu.");
-                break;
-        }
+        restoreStatusForCurrentState();
     }
 
     private void refreshMainTable(String tableName) throws SQLException {

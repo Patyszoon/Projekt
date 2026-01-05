@@ -9,6 +9,7 @@ import java.awt.event.*;
 public class StatusBarManager {
     private JLabel statusBar;
     private Timer statusTimer;
+    private boolean allowAutoReset = true;
 
     public StatusBarManager() {
         this.statusBar = new JLabel("Gotowy");
@@ -20,7 +21,6 @@ public class StatusBarManager {
         statusBar.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
         statusBar.setOpaque(true);
         statusBar.setBackground(Color.PINK);
-
     }
 
     public JLabel getStatusBar() {
@@ -46,12 +46,15 @@ public class StatusBarManager {
             statusTimer.setRepeats(false);
             statusTimer.start();
         }
-
     }
 
     public void setStatusPermanent(String message) {
         setStatus(message, 0); // bez timera
     }
+
+    public void enableAutoReset() {this.allowAutoReset = true;}
+
+    public void disableAutoReset() {this.allowAutoReset = false;}
 
     public void addMouseListener(java.awt.event.MouseListener listener) {
         statusBar.addMouseListener(listener);
