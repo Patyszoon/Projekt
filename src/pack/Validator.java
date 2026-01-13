@@ -45,4 +45,13 @@ public class Validator {
         // imie/naziwkso: tylko litery, spacje i myslniki
         return name.matches("[a-zA-ZąćęłńóśźżĄĆĘŁŃÓŚŹŻ\\s\\-]+");
     }
+
+    public static boolean isValidEmail(String email) {
+        String pattern = "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$";
+        return Pattern.matches(pattern, email);
+    }
+
+    public static boolean isValidNrDowodu(String nrDowodu) {
+        return nrDowodu != null && nrDowodu.length() == 9;
+    }
 }

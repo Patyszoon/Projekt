@@ -58,7 +58,8 @@ public class TableManager {
         switch(currentTableName) {
             case "uzytkownik":
                 rows = userCRUD.getUsers();
-                columnNames = new String[]{"ID", "Imię", "Nazwisko", "Nr_tel", "Data_ur"};
+                columnNames = new String[]{"ID", "Imię", "Nazwisko", "Adres", "Miejscowość", "Nr_tel",
+                        "Email", "Nr_dowodu", "Data_ur", "Czy_zweryfikowany"};
                 break;
             // case inna tabela:
                 // rows = ...

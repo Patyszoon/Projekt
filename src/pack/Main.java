@@ -12,7 +12,7 @@ public class Main {
             Scanner sc = new Scanner(System.in);
             Connection conn = dbConnect.getConnection();
             UserCRUD userCRUD = new UserCRUD(conn);
-            Menu menu = new Menu(sc, userCRUD);
+            // Menu menu = new Menu(sc, userCRUD);
 
             // uruchomienie gui
             new MainWindow(userCRUD);

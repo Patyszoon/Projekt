@@ -91,26 +91,41 @@ public class DialogManager {
     void showAddUserDialog() {
         JDialog dialog = new JDialog(parentFrame, "Dodaj użytkownika", true);
         dialog.setLocationRelativeTo(null);
-        dialog.setSize(500, 400);
+        dialog.setSize(800, 600);
         dialog.setResizable(false);
         dialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
         setStatusBar("Dodawanie użytkownika...");
 
-        JPanel addPanel = new JPanel(new GridLayout(4, 2, 10, 10)); // bez tego nie widac
-        addPanel.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
+        JPanel addPanel = new JPanel(new GridLayout(9, 2, 10, 10)); // bez tego nie widac
+        addPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
         JTextField imieField = new JTextField();
         JTextField nazwiskoField = new JTextField();
+        JTextField adresField = new JTextField();
+        JTextField miejscowoscField = new JTextField();
         JTextField nrTelField = new JTextField();
+        JTextField emailField = new JTextField();
+        JTextField nrDowoduField = new JTextField();
         JTextField dataUrField = new JTextField();
+        JComboBox<String> czyZweryfikowanyCombo = new JComboBox<>(new String[]{"N", "T"});
 
         addPanel.add(new JLabel("Imię:"));
         addPanel.add(imieField);
         addPanel.add(new JLabel("Nazwisko:"));
         addPanel.add(nazwiskoField);
+        addPanel.add(new JLabel("Adres:"));
+        addPanel.add(adresField);
+        addPanel.add(new JLabel("Miejscowosc:"));
+        addPanel.add(miejscowoscField);
         addPanel.add(new JLabel("Nr telefonu:"));
         addPanel.add(nrTelField);
+        addPanel.add(new JLabel("Email:"));
+        addPanel.add(emailField);
+        addPanel.add(new JLabel("Nr dowodu:"));
+        addPanel.add(nrDowoduField);
         addPanel.add(new JLabel("Data urodzenia:"));
         addPanel.add(dataUrField);
+        addPanel.add(new JLabel("Czy zweryfikowany?:"));
+        addPanel.add(czyZweryfikowanyCombo);
 
         JPanel buttonPanel = new JPanel();
         JButton saveButton = new JButton("Zapisz");
@@ -122,13 +137,20 @@ public class DialogManager {
             public void actionPerformed(ActionEvent e) {
                 String imie = imieField.getText().trim();
                 String nazwisko = nazwiskoField.getText().trim();
+                String adres = adresField.getText().trim();
+                String miejscowosc = miejscowoscField.getText().trim();
                 String nrTel = nrTelField.getText().trim();
+                String email = emailField.getText().trim();
+                String nrDowodu = nrDowoduField.getText().trim();
                 String dataUrodzenia = dataUrField.getText().trim();
+                String czyZweryfikowany = (String) czyZweryfikowanyCombo.getSelectedItem();
 
                 // WALIDACJA
-                if (Validator.isEmpty(imie, nazwisko, nrTel, dataUrodzenia)) {
+                // wymagane pola
+
+                if (Validator.isEmpty(imie, nazwisko, nrTel, email, dataUrodzenia)) {
                     JOptionPane.showMessageDialog(parentFrame,
-                            "Wszystkie pola muszą być wypełnione!", "Błąd", JOptionPane.ERROR_MESSAGE);
+                            "Wypełnij wszystkie wymagane pola (imie, nazwisko, data urodzenia, numer telefonu oraz email)!", "Błąd", JOptionPane.ERROR_MESSAGE);
                     return;
                 }
 
@@ -146,6 +168,13 @@ public class DialogManager {
                     return;
                 }
 
+                if (!Validator.isValidEmail(email)) {
+                    JOptionPane.showMessageDialog(parentFrame,
+                            "Nieprawidłowy format email!", "Błąd", JOptionPane.ERROR_MESSAGE);
+                    emailField.requestFocus();
+                    return;
+                }
+
                 if (!Validator.isValidPhone(nrTel)) {
                     JOptionPane.showMessageDialog(parentFrame,
                             "Numer telefonu musi składać się z 9 cyfr!", "Błąd", JOptionPane.ERROR_MESSAGE);
@@ -160,8 +189,20 @@ public class DialogManager {
                     return;
                 }
 
+                if (!nrDowodu.isEmpty() && !Validator.isValidNrDowodu(nrDowodu)) {
+                    JOptionPane.showMessageDialog(parentFrame,
+                            "Nr dowodu musi mieć 9 znaków!", "Błąd", JOptionPane.ERROR_MESSAGE);
+                    nrDowoduField.requestFocus();
+                    return;
+                }
+
                 try {
-                    userCRUD.insertUser(imie, nazwisko, nrTel, dataUrodzenia);
+                    // String finalDataUrodzenia = dataUrodzenia.isEmpty() ? null : dataUrodzenia;
+                    // jesli nie podano nr dowodu, daj null
+                    String finalNrDowodu = nrDowodu.isEmpty() ? null : nrDowodu;
+
+                    userCRUD.insertUser(imie, nazwisko, adres, miejscowosc, nrTel, email,
+                            finalNrDowodu, dataUrodzenia, czyZweryfikowany);
                     JOptionPane.showMessageDialog(parentFrame, "Dodano użytkownika do bazy!");
                     setStatusBar("Dodano użytkownika: " + imie + " " + nazwisko);
                     tableManager.refreshTable();
@@ -184,7 +225,8 @@ public class DialogManager {
         dialog.setVisible(true);
     }
     void showEditUserDialog(int prefilledId) {
-        String poleSql[] = {"imie", "nazwisko", "nr_tel", "data_ur"};
+        String poleSql[] = {"imie", "nazwisko", "adres", "miejscowosc", "nr_tel", "email",
+                "nr_dowodu", "data_ur", "czy_zweryfikowany"};
         JDialog dialog = new JDialog(parentFrame, "Edytuj użytkownika", true);
         dialog.setLocationRelativeTo(null);
         dialog.setSize(500, 400);
@@ -195,7 +237,7 @@ public class DialogManager {
         JPanel addPanel = new JPanel(new GridLayout(4, 2, 10, 10)); // bez tego nie widac
         addPanel.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
         JTextField idField = new JTextField();
-        JComboBox poleField = new JComboBox(poleSql);
+        JComboBox<String> poleField = new JComboBox<>(poleSql);
         JTextField zmianaField = new JTextField();
 
         if (prefilledId > 0) {
@@ -256,10 +298,37 @@ public class DialogManager {
                         }
                         break;
 
+                    case "email":
+                        if (!Validator.isValidEmail(zmiana)) {
+                            JOptionPane.showMessageDialog(parentFrame,
+                                    "Nieprawidłowy format email!", "Błąd", JOptionPane.ERROR_MESSAGE);
+                            zmianaField.requestFocus();
+                            return;
+                        }
+                        break;
+
+                    case "nr_dowodu":
+                        if (!Validator.isValidNrDowodu(zmiana)) {
+                            JOptionPane.showMessageDialog(parentFrame,
+                                    "Nr dowodu musi mieć 9 znaków!", "Błąd", JOptionPane.ERROR_MESSAGE);
+                            zmianaField.requestFocus();
+                            return;
+                        }
+                        break;
+
                     case "data_ur":
                         if (!Validator.isValidDate(zmiana)) {
                             JOptionPane.showMessageDialog(parentFrame,
                                     "Data musi być w formacie RRRR-MM-DD!", "Błąd", JOptionPane.ERROR_MESSAGE);
+                            zmianaField.requestFocus();
+                            return;
+                        }
+                        break;
+
+                    case "czy_zweryfikowany":
+                        if (!zmiana.equals("T") && !zmiana.equals("N")) {
+                            JOptionPane.showMessageDialog(parentFrame,
+                                    "Wartość musi być 'T' (tak) lub 'N' (nie)!", "Błąd", JOptionPane.ERROR_MESSAGE);
                             zmianaField.requestFocus();
                             return;
                         }
@@ -386,7 +455,8 @@ public class DialogManager {
         setStatusBar("Wyświetlanie użytkowników...");
 
         List<Object[]> users = userCRUD.getUsers();
-        String[] columnNames = {"ID", "Imię", "Nazwisko", "Nr_tel", "Data_ur"};
+        String[] columnNames = {"ID", "Imię", "Nazwisko", "Adres", "Miejscowość",
+                "Nr_tel", "Email", "Nr_dowodu", "Data_ur", "Czy_zweryfikowany"};
 
         Object[][] tableData = new Object[users.size()][];
         for (int i = 0; i < users.size(); i++) {
@@ -396,12 +466,13 @@ public class DialogManager {
         DefaultTableModel model = new DefaultTableModel(tableData, columnNames) {
             @Override
             public boolean isCellEditable(int row, int column) {
-                return false; //brak możliwości edycji komórek
+                return false; //brak mozliwosci edycji komorek
             }
         };
 
         JTable table = new JTable(model);
         table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        table.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);    // pozwala na przeiwjanei w poziomie
 
         javax.swing.table.TableRowSorter<DefaultTableModel> sorter = new javax.swing.table.TableRowSorter<>(model);
 

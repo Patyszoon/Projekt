@@ -361,7 +361,12 @@ public class MainWindow extends JFrame{
         tableManager.refreshTable(tableName);
 
         DefaultTableModel model = (DefaultTableModel) tableManager.getTable().getModel();
-        rowSorter = new TableRowSorter<>(model);
+
+        if (rowSorter == null) {
+            rowSorter = new TableRowSorter<>(model);
+        } else {
+            rowSorter.setModel(model);
+        }
         tableManager.getTable().setRowSorter(rowSorter);
 
         mainTableSortListener();
