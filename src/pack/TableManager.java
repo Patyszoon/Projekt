@@ -18,8 +18,8 @@ public class TableManager {
     }
 
     private void configureTable() {
-        table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-        table.getTableHeader().setReorderingAllowed(false);
+        table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);    // tylko jeden wiersz moze byc wybrany na raz
+        //table.getTableHeader().setReorderingAllowed(false);           // kolumny nieprzesuwalne
     }
 
     public JTable getTable() {
@@ -79,16 +79,16 @@ public class TableManager {
             public boolean isCellEditable(int row, int column) {
                 return false;
             }
-        @Override
-        public Class<?> getColumnClass(int columnIndex) {
-            // Deklaruj typy kolumn; dla przykładu:
-            switch (columnIndex) {
-                case 0: return Integer.class;
-                case 3: return Long.class;
-                case 4: return java.time.LocalDate.class;
-                default: return String.class;
+            @Override
+            public Class<?> getColumnClass(int columnIndex) {
+                // Deklaruj typy kolumn; dla przykładu:
+                switch (columnIndex) {
+                    case 0: return Integer.class;
+                    case 3: return Long.class;
+                    case 4: return java.time.LocalDate.class;
+                    default: return String.class;
+                }
             }
-        }
     };
         table.setModel(model);
         configureTableSorter(model);

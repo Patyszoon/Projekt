@@ -44,5 +44,6 @@ public class Validator {
     public static boolean isValidName(String name) {
         // imie/naziwkso: tylko litery, spacje i myslniki
         return name.matches("[a-zA-ZąćęłńóśźżĄĆĘŁŃÓŚŹŻ\\s\\-]+");
+        // + co najmniej jeden znak, s whitespace dozwolone
     }
 }
