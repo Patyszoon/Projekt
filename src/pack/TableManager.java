@@ -79,9 +79,17 @@ public class TableManager {
             public boolean isCellEditable(int row, int column) {
                 return false;
             }
-
-        };
-
+        @Override
+        public Class<?> getColumnClass(int columnIndex) {
+            // Deklaruj typy kolumn; dla przykładu:
+            switch (columnIndex) {
+                case 0: return Integer.class;
+                case 3: return Long.class;
+                case 4: return java.time.LocalDate.class;
+                default: return String.class;
+            }
+        }
+    };
         table.setModel(model);
         configureTableSorter(model);
 
