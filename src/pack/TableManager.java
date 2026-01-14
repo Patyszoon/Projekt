@@ -98,24 +98,7 @@ public class TableManager {
 
     private void configureTableSorter(DefaultTableModel model) {
         TableRowSorter<DefaultTableModel> sorter = new TableRowSorter<>(model);
-
-        // TableRowSorter z komparatorem dla kolumny ID
-        Comparator<Object> idComparator = (o1, o2) -> {
-            try {
-                if (o1 instanceof Number && o2 instanceof Number) {
-                    return Integer.compare(((Number)o1).intValue(), ((Number)o2).intValue());
-                }
-                int i1 = Integer.parseInt(o1.toString());
-                int i2 = Integer.parseInt(o2.toString());
-                return Integer.compare(i1, i2);
-            } catch (Exception ex) {
-                return o1.toString().compareTo(o2.toString());
-            }
-        };
-        sorter.setComparator(0, idComparator);
-
         table.setRowSorter(sorter);
-
     }
 
     public void clearTable() {
