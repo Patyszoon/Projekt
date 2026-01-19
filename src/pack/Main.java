@@ -25,13 +25,5 @@ public class Main {
         } catch (IOException e) {
             System.out.println("BLAD I/O" + e.getMessage());
         }
-//        finally {
-//            try {
-//                dbConnect.closeConnection();
-//            } catch (SQLException e) {
-//                System.out.println("BLAD BAZY DANYCH" + e.getMessage());
-//            }
-//        }
-
     }
 }

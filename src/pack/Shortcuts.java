@@ -4,6 +4,7 @@ import javax.swing.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
+import java.io.IOException;
 import java.sql.SQLException;
 
 public class Shortcuts {
@@ -19,6 +20,7 @@ public class Shortcuts {
     private boolean isReady(){
         return mainWindow.getCurrentState() == MainWindow.appState.READY;
     }
+
     private void initShortcuts(JRootPane rootPane) {
         InputMap im = rootPane.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW);
         ActionMap am = rootPane.getActionMap();
@@ -105,6 +107,8 @@ public class Shortcuts {
                     new MainWindow(mainWindow.getUserCRUD());
                 } catch (SQLException ex) {
                     throw new RuntimeException(ex);
+                }catch(IOException exx){
+                    exx.printStackTrace();
                 }
             }
         });

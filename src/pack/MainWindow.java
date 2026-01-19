@@ -4,6 +4,7 @@ import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableRowSorter;
 import java.awt.*;
 import java.awt.event.*;
+import java.io.IOException;
 import java.sql.SQLException;
 import java.util.List;
 
@@ -45,7 +46,7 @@ public class MainWindow extends JFrame{
         return currentState;
     }
 
-    public MainWindow(UserCRUD userCRUD) throws SQLException{
+    public MainWindow(UserCRUD userCRUD) throws SQLException, IOException{
         this.userCRUD = userCRUD;
         setupWindow();
         createMenu();
@@ -157,6 +158,7 @@ public class MainWindow extends JFrame{
                 else if (src == showUsersBtn) setStatusBar("Pokaż użytkowników");
                 else if (src == editUserBtn)  setStatusBar("Edytuj użytkownika");
                 else if (src == delUserBtn)   setStatusBar("Usuń użytkownika");
+
             }
             @Override
             public void mouseExited(MouseEvent e) {
@@ -177,7 +179,7 @@ public class MainWindow extends JFrame{
         return panel;
     }
 
-    private void createMenu() { //pasek menu u gory
+    private void createMenu() throws IOException { //pasek menu u gory
         JMenuBar menuBar = new JMenuBar();
 
         JMenu fileMenu = new JMenu("Plik");
@@ -207,6 +209,7 @@ public class MainWindow extends JFrame{
         exitItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_Q, InputEvent.CTRL_DOWN_MASK));
         JMenuItem aboutItem = new JMenuItem("O nas");
         JMenuItem helpItem = new JMenuItem("Pomoc");
+        JMenuItem exportPdfItem = new JMenuItem("Eksportuj do PDF");
 
         MouseAdapter mouseAdapter = new MouseAdapter() {
             @Override
@@ -223,6 +226,7 @@ public class MainWindow extends JFrame{
                 else if (src == delUserItem)   setStatusBar("Usun uzytkownika");
                 else if (src == selectTableItem)      setStatusBar("Wybierz tabele");
                 else if (src == exitItem)      setStatusBar("Wyjscie");
+                else if (src == exportPdfItem) setStatusBar("Eksportuj tabelę do PDF");
             }
             @Override
             public void mouseExited(MouseEvent e) {
@@ -241,6 +245,7 @@ public class MainWindow extends JFrame{
         delUserItem.addMouseListener(mouseAdapter);
         selectTableItem.addMouseListener(mouseAdapter);
         exitItem.addMouseListener(mouseAdapter);
+        exportPdfItem.addMouseListener(mouseAdapter);
 
         newUserItem.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
@@ -294,6 +299,18 @@ public class MainWindow extends JFrame{
             }
         });
 
+        exportPdfItem.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                PDFexport exporter = new PDFexport(MainWindow.this);
+                try {
+                    exporter.exportTableToPDF();
+                } catch (IOException ex) {
+                    ex.printStackTrace();
+                }
+            }
+        });
+
         // dodac itemy do tego file menu
         fileMenu.add(newUserItem);
         fileMenu.add(showUsersItem);
@@ -301,6 +318,7 @@ public class MainWindow extends JFrame{
         fileMenu.add(delUserItem);
         fileMenu.add(selectTableItem);
         fileMenu.add(exitItem);
+        fileMenu.add(exportPdfItem);
         helpMenu.add(helpItem);
         helpMenu.add(aboutItem);
 
