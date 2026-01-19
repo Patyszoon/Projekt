@@ -9,7 +9,7 @@ import java.awt.event.*;
 public class StatusBarManager {
     private JLabel statusBar;
     private Timer statusTimer;
-    private boolean allowAutoReset = true;
+    //private boolean allowAutoReset = true;
 
     public StatusBarManager() {
         this.statusBar = new JLabel("Gotowy");

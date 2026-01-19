@@ -106,7 +106,7 @@ public class MainWindow extends JFrame{
         filterPanel.add(filterField, BorderLayout.CENTER);
         filterPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, filterField.getPreferredSize().height));
         panel.add(filterPanel);
-        panel.add(Box.createRigidArea(new Dimension(0, 5)));
+        //panel.add(Box.createRigidArea(new Dimension(0, 5)));
 
         // reakcja na zmianę tekstu w szukaj
         filterField.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
