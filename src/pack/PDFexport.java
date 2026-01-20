@@ -8,9 +8,13 @@ import org.apache.pdfbox.pdmodel.font.PDFont;
 import org.apache.pdfbox.pdmodel.font.PDType0Font;
 import org.apache.pdfbox.pdmodel.font.PDType1Font;
 
+import javax.print.attribute.HashPrintRequestAttributeSet;
+import javax.print.attribute.PrintRequestAttributeSet;
 import javax.swing.*;
 import javax.swing.table.TableModel;
 import java.awt.*;
+import java.awt.print.PrinterException;
+import java.awt.print.PrinterJob;
 import java.io.File;
 import java.io.IOException;
 
@@ -19,9 +23,11 @@ import be.quodlibet.boxable.Cell;
 import be.quodlibet.boxable.HorizontalAlignment;
 import be.quodlibet.boxable.Row;
 import be.quodlibet.boxable.VerticalAlignment;
+import org.apache.pdfbox.printing.PDFPageable;
 
 public class PDFexport {
     private MainWindow mainWindow;
+    public File lastSavedPdf;
 
     public PDFexport(MainWindow mainWindow) {
         this.mainWindow = mainWindow;
@@ -148,9 +154,34 @@ public class PDFexport {
                     doc.close();
                 }
             }
+            lastSavedPdf = selectedFile;
 
         }
 
+    }
+    public void printPdf(File pdfFile) throws IOException {
+        if (pdfFile == null) {
+            throw new IOException("Nie wskazano pliku PDF do drukowania.");
+        }
+        try (PDDocument doc = PDDocument.load(pdfFile)) {
+            PrinterJob job = PrinterJob.getPrinterJob();
+            job.setJobName(pdfFile.getName());
+            job.setPageable(new PDFPageable(doc));
+
+            PrintRequestAttributeSet attrs = new HashPrintRequestAttributeSet();
+            if (job.printDialog(attrs)) {
+                job.print();
+                JOptionPane.showMessageDialog(mainWindow, "Wysłano do drukarki.", "Sukces", JOptionPane.INFORMATION_MESSAGE);
+            }
+        } catch (PrinterException e) {
+            JOptionPane.showMessageDialog(mainWindow, "Błąd drukowania: " + e.getMessage(), "Błąd", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+    public void printLastPdf() throws IOException {
+        if (lastSavedPdf == null) {
+            throw new IOException("Brak wygenerowanego pliku PDF do drukowania.");
+        }
+        printPdf(lastSavedPdf);
     }
 
 }

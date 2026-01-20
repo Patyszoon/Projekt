@@ -38,6 +38,10 @@ public class MainWindow extends JFrame{
     private JMenuItem editUserItem;
     private JMenuItem delUserItem;
     private JMenuItem selectTableItem;
+    private JMenuItem exportPdfItem;
+    private JMenuItem printPdfItem;
+
+    private PDFexport pdfExport;
 
     public UserCRUD getUserCRUD() {
         return userCRUD;
@@ -49,6 +53,7 @@ public class MainWindow extends JFrame{
     public MainWindow(UserCRUD userCRUD) throws SQLException, IOException{
         this.userCRUD = userCRUD;
         setupWindow();
+        this.pdfExport = new PDFexport(this);
         createMenu();
         updateUiState(appState.NO_CONNECTION);
         setVisible(true); // pokaz okno
@@ -209,7 +214,9 @@ public class MainWindow extends JFrame{
         exitItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_Q, InputEvent.CTRL_DOWN_MASK));
         JMenuItem aboutItem = new JMenuItem("O nas");
         JMenuItem helpItem = new JMenuItem("Pomoc");
-        JMenuItem exportPdfItem = new JMenuItem("Eksportuj do PDF");
+
+        this.exportPdfItem = new JMenuItem("Eksportuj do PDF");
+        this.printPdfItem = new JMenuItem("Drukuj PDF");
 
         MouseAdapter mouseAdapter = new MouseAdapter() {
             @Override
@@ -227,6 +234,7 @@ public class MainWindow extends JFrame{
                 else if (src == selectTableItem)      setStatusBar("Wybierz tabele");
                 else if (src == exitItem)      setStatusBar("Wyjscie");
                 else if (src == exportPdfItem) setStatusBar("Eksportuj tabelę do PDF");
+                else if (src == printPdfItem)     setStatusBar("Drukuj PDF");
             }
             @Override
             public void mouseExited(MouseEvent e) {
@@ -246,6 +254,7 @@ public class MainWindow extends JFrame{
         selectTableItem.addMouseListener(mouseAdapter);
         exitItem.addMouseListener(mouseAdapter);
         exportPdfItem.addMouseListener(mouseAdapter);
+        printPdfItem.addMouseListener(mouseAdapter);
 
         newUserItem.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
@@ -299,15 +308,21 @@ public class MainWindow extends JFrame{
             }
         });
 
-        exportPdfItem.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                PDFexport exporter = new PDFexport(MainWindow.this);
-                try {
-                    exporter.exportTableToPDF();
-                } catch (IOException ex) {
-                    ex.printStackTrace();
-                }
+        exportPdfItem.addActionListener(e -> {
+            try {
+                pdfExport.exportTableToPDF(); // zapisuje i zapamiętuje plik wewnątrz PDFexport
+            } catch (IOException ex) {
+                ex.printStackTrace();
+                JOptionPane.showMessageDialog(this, "Błąd eksportu: " + ex.getMessage(), "Błąd", JOptionPane.ERROR_MESSAGE);
+            }
+        });
+
+        printPdfItem.addActionListener(e -> {
+            try {
+                pdfExport.printLastPdf(); // drukuje ostatnio zapisany PDF bezpośrednio
+            } catch (IOException ex) {
+                ex.printStackTrace();
+                JOptionPane.showMessageDialog(this, "Błąd drukowania: " + ex.getMessage(), "Błąd", JOptionPane.ERROR_MESSAGE);
             }
         });
 
@@ -319,6 +334,7 @@ public class MainWindow extends JFrame{
         fileMenu.add(selectTableItem);
         fileMenu.add(exitItem);
         fileMenu.add(exportPdfItem);
+        fileMenu.add(printPdfItem);
         helpMenu.add(helpItem);
         helpMenu.add(aboutItem);
 
@@ -356,6 +372,8 @@ public class MainWindow extends JFrame{
         if (showUsersItem != null)   showUsersItem.setEnabled(enabled);
         if (editUserItem != null)    editUserItem.setEnabled(enabled);
         if (delUserItem != null)     delUserItem.setEnabled(enabled);
+        if (exportPdfItem != null)   exportPdfItem.setEnabled(enabled);
+        if (printPdfItem != null)    printPdfItem.setEnabled(enabled);
 
         // Info nad tabelką
         if(infoPane !=null){
