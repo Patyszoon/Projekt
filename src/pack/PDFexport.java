@@ -159,6 +159,7 @@ public class PDFexport {
         }
 
     }
+    // funkcja drukowania pliku, wyświetla okno dialogowe gdzie można zmienić ustawienia wydruku
     public void printPdf(File pdfFile) throws IOException {
         if (pdfFile == null) {
             throw new IOException("Nie wskazano pliku PDF do drukowania.");
@@ -177,11 +178,12 @@ public class PDFexport {
             JOptionPane.showMessageDialog(mainWindow, "Błąd drukowania: " + e.getMessage(), "Błąd", JOptionPane.ERROR_MESSAGE);
         }
     }
+    // funkcja używana w MainWindow przy drukowaniu pliku
     public void printLastPdf() throws IOException {
         if (lastSavedPdf == null) {
             throw new IOException("Brak wygenerowanego pliku PDF do drukowania.");
         }
-        printPdf(lastSavedPdf);
+        printPdf(lastSavedPdf);  // lastSavedPdf to ostatni plik .pdf jaki został wygenerowany, jeśli nie wygenerowano pliku - wyświetli się błąd
     }
 
 }
